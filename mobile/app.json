@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Sahyatri",
+    "slug": "sahyatri",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "sahyatri",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0f11"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sahyatri.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f0f11"
+      },
+      "package": "com.sahyatri.mobile",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Sahyatri to use your location for indoor navigation."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "sahyatri-mobile"
+      }
+    }
+  }
+}

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Station Surveillance Terminal</title>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --panel-bg: #1f2833;
+            --text-main: #c5c6c7;
+            --accent: #66fcf1;
+            --accent-dim: #45a29e;
+            --risk-normal: #50CD32;
+            --risk-medium: #FFC800;
+            --risk-high: #ff3b3b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* Header */
+        header { padding: 15px 20px; background: var(--panel-bg); border-bottom: 2px solid var(--accent-dim); display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.5rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
+        .live-badge { background: red; color: white; padding: 3px 10px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        /* Main Container */
+        .container { display: flex; flex: 1; padding: 20px; gap: 20px; }
+
+        /* Video Feed */
+        .video-container { flex: 3; background: #000; border: 2px solid var(--accent-dim); border-radius: 8px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .video-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        .vid-overlay-corners { position: absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+        .vid-corner { position: absolute; width: 40px; height: 40px; border-color: var(--accent); border-style: solid; }
+        .vid-corner.tl { top: 10px; left: 10px; border-width: 3px 0 0 3px; }
+        .vid-corner.tr { top: 10px; right: 10px; border-width: 3px 3px 0 0; }
+        .vid-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; }
+        .vid-corner.br { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; }
+
+        /* Sidebar */
+        .sidebar { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .card { background: var(--panel-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent); }
+        .card h2 { font-size: 1.1rem; color: var(--text-main); border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        /* Metrics */
+        .metric { margin-bottom: 15px; }
+        .metric-label { font-size: 0.9rem; color: #888; text-transform: uppercase; }
+        .metric-val { font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: var(--accent); }
+        
+        #risk-val { padding: 5px 10px; border-radius: 4px; display: inline-block; color: #000; }
+        .risk-normal { background: var(--risk-normal); }
+        .risk-medium { background: var(--risk-medium); }
+        .risk-high   { background: var(--risk-high); color: white !important; }
+
+        .alert-box { background: rgba(255, 59, 59, 0.1); border: 1px solid var(--risk-high); padding: 10px; border-radius: 4px; color: var(--risk-high); font-size: 0.9rem; }
+
+        /* Camera Controls */
+        select, input, button { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; color: var(--text-main); border: 1px solid #444; border-radius: 4px; }
+        button { background: var(--accent-dim); color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: var(--accent); }
+        
+        .camera-adder { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #444; }
+        .camera-adder h3 { font-size: 0.9rem; margin-bottom: 10px; color: #888; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SYS-Terminal // Crowd Risk Assessment</h1>
+        <div class="live-badge">● LIVE</div>
+    </header>
+
+    <div class="container">
+        <!-- Video Array -->
+        <div class="video-container">
+            <img src="/video_feed" alt="Video Stream Loading...">
+            <div class="vid-overlay-corners">
+                <div class="vid-corner tl"></div>
+                <div class="vid-corner tr"></div>
+                <div class="vid-corner bl"></div>
+                <div class="vid-corner br"></div>
+            </div>
+        </div>
+
+        <!-- Telemetry Sidebar -->
+        <div class="sidebar">
+            
+            <!-- Live Status -->
+            <div class="card">
+                <h2>Live Telemetry</h2>
+                <div class="metric">
+                    <div class="metric-label">Target Location</div>
+                    <div class="metric-val" id="loc-val" style="font-size: 1.1rem;">Platform 1</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Headcount</div>
+                    <div class="metric-val" id="count-val">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">System Risk Status</div>
+                    <div class="metric-val" id="risk-val" class="risk-normal">NORMAL</div>
+                </div>
+                <div id="alert-box" class="alert-box" style="display: none;">
+                    Situation Normal.
+                </div>
+            </div>
+
+            <!-- Source Control -->
+            <div class="card">
+                <h2>Source Control</h2>
+                
+                <label class="metric-label">Active Camera Feed</label>
+                <select id="camera-select" onchange="switchCamera()">
+                    {% for cam in cameras %}
+                        <option value="{{ cam.id }}" {% if cam.id == current_cam_id %}selected{% endif %}>
+                            {{ cam.location }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <div class="camera-adder">
+                    <h3>+ Add Mobile IP Webcam</h3>
+                    <input type="text" id="new-url" placeholder="http://192.168.1.5:8080/video">
+                    <input type="text" id="new-loc" placeholder="Location Name (e.g. South Gate)">
+                    <button onclick="addCamera()">Connect Stream</button>
+                    <p style="font-size: 0.7rem; color: #666; margin-top:5px;">Hint: Use "IP Webcam" app on Android.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Fetch metrics every second
+        setInterval(async () => {
+            try {
+                const res = await fetch('/metrics');
+                const data = await res.json();
+                
+                document.getElementById('loc-val').innerText = data.location;
+                document.getElementById('count-val').innerText = data.person_count;
+                
+                const riskEl = document.getElementById('risk-val');
+                riskEl.innerText = data.risk_level;
+                riskEl.className = 'metric-val risk-' + data.risk_level.toLowerCase().replace(' ', '-');
+
+                const alertEl = document.getElementById('alert-box');
+                if (data.risk_level !== 'NORMAL') {
+                    alertEl.style.display = 'block';
+                    alertEl.innerText = data.alert_msg;
+                    alertEl.style.color = data.risk_level === 'HIGH RISK' ? 'var(--risk-high)' : 'var(--risk-medium)';
+                    alertEl.style.borderColor = alertEl.style.color;
+                } else {
+                    alertEl.style.display = 'none';
+                }
+            } catch(e) { console.error(e); }
+        }, 1000);
+
+        // Switch camera logic
+        async function switchCamera() {
+            const id = document.getElementById('camera-select').value;
+            await fetch(`/switch/${id}`, { method: 'POST' });
+            // Reload page to refresh video stream
+            window.location.reload(); 
+        }
+
+        // Add remote IP webcam
+        async function addCamera() {
+            const source = document.getElementById('new-url').value;
+            const loc = document.getElementById('new-loc').value;
+            if(!source || !loc) return alert("Please fill both fields.");
+
+            const res = await fetch('/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({source: source, location: loc})
+            });
+            const data = await res.json();
+            if(data.success) window.location.reload();
+        }
+    </script>
+</body>
+</html>
