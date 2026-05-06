@@ -1,0 +1,23 @@
+{
+  "translation": {
+    "admin_overview": "Admin Overview",
+    "station_control": "Sahyatri Junction Station Control",
+    "live": "Live",
+    "disconnected": "Disconnected",
+    "high_density": "High Density Zones",
+    "active_alerts": "Active Alerts",
+    "today_navs": "Today's Navigations",
+    "total_navs": "Total Navigations",
+    "recent_alerts": "Recent Alerts",
+    "view_all": "View All",
+    "no_alerts": "No active alerts",
+    "crowd_hotspots": "Crowd Hotspots",
+    "monitor": "Monitor",
+    "all_clear": "All zones low density",
+    "quick_actions": "Quick Actions",
+    "station_editor": "Station Editor",
+    "send_notification": "Send Notification",
+    "analytics": "Analytics",
+    "crowd_monitor": "Crowd Monitor"
+  }
+}

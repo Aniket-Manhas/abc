@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSocket } from '../../contexts/SocketContext';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Navbar({ title, onMenuToggle, isAdmin = false }) {
+  const { t, i18n } = useTranslation();
   const { notifications, dismissNotification } = useSocket();
   const { user } = useAuth();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -16,6 +18,16 @@ export default function Navbar({ title, onMenuToggle, isAdmin = false }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Language Toggle */}
+        <button 
+          className="btn-icon" 
+          onClick={() => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en')}
+          style={{ fontSize: '1rem', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }}
+          title="Toggle Language"
+        >
+          {i18n.language === 'en' ? 'अ' : 'A'}
+        </button>
+
         {/* Notification bell */}
         <div style={{ position: 'relative' }}>
           <button className="btn-icon" onClick={() => setShowNotifs(p => !p)} style={{ fontSize: '1.2rem' }}>

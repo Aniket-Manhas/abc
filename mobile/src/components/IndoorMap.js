@@ -39,31 +39,31 @@ function computeBounds(geojson) {
       if (lat > maxLat) maxLat = lat;
     });
   }
-  const width  = maxLng - minLng || 1e-9;
+  const width = maxLng - minLng || 1e-9;
   const height = maxLat - minLat || 1e-9;
   return { minLng, maxLng, minLat, maxLat, width, height };
 }
 
 function projectionParams(bounds, viewW, viewH, pad = 20) {
-  const refLat     = ((bounds.minLat + bounds.maxLat) / 2) * DEG;
+  const refLat = ((bounds.minLat + bounds.maxLat) / 2) * DEG;
   const mPerDegLng = 111320 * Math.cos(refLat);
   const mPerDegLat = 111320;
-  const rangeX = bounds.width  * mPerDegLng;
+  const rangeX = bounds.width * mPerDegLng;
   const rangeY = bounds.height * mPerDegLat;
   const innerW = viewW - 2 * pad;
   const innerH = viewH - 2 * pad;
-  const scale  = Math.min(innerW / rangeX, innerH / rangeY);
+  const scale = Math.min(innerW / rangeX, innerH / rangeY);
   const offsetX = pad + (innerW - rangeX * scale) / 2;
   const offsetY = pad + (innerH - rangeY * scale) / 2;
   return { mPerDegLng, mPerDegLat, rangeX, rangeY, scale, offsetX, offsetY };
 }
 
 function projectLngLat(lng, lat, bounds, viewW, viewH) {
-  const p  = projectionParams(bounds, viewW, viewH);
+  const p = projectionParams(bounds, viewW, viewH);
   const mx = (lng - bounds.minLng) * p.mPerDegLng;
   const my = (lat - bounds.minLat) * p.mPerDegLat;
-  const x  = p.offsetX + mx * p.scale;
-  const y  = p.offsetY + (p.rangeY - my) * p.scale;
+  const x = p.offsetX + mx * p.scale;
+  const y = p.offsetY + (p.rangeY - my) * p.scale;
   return [x, y];
 }
 
@@ -103,7 +103,7 @@ export default function IndoorMap({
   const { width: screenW } = useWindowDimensions();
   const [containerH, setContainerH] = useState(500);
 
-  const [pan,  setPan]  = useState({ x: 0, y: 0 });
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const panStateRef = useRef({ x: 0, y: 0 });
   const panStartRef = useRef({ x: 0, y: 0 });
@@ -112,7 +112,7 @@ export default function IndoorMap({
 
   const bounds = useMemo(() =>
     geojson ? computeBounds(geojson) : null,
-  [geojson]);
+    [geojson]);
 
   const project = useCallback((lng, lat) => {
     if (!bounds) return [0, 0];
@@ -122,9 +122,9 @@ export default function IndoorMap({
   // ── PanResponder — supports 1-finger pan and 2-finger pinch-zoom ──
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder:       () => false,
-      onStartShouldSetPanResponderCapture:() => false,
-      onMoveShouldSetPanResponder:        () => true,
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         panStartRef.current = { ...panStateRef.current };
         lastDist.current = null;
@@ -170,7 +170,7 @@ export default function IndoorMap({
   // Separate outside approach from indoor route
   const ap = outsideApproach?.pathToEntrance;
   const apLen = Array.isArray(ap) ? ap.length : 0;
-  const indoorCoords  = routeCoords && apLen > 1 ? routeCoords.slice(apLen - 1) : routeCoords;
+  const indoorCoords = routeCoords && apLen > 1 ? routeCoords.slice(apLen - 1) : routeCoords;
   const outsideCoords = apLen > 1 ? ap : null;
 
   const toPoints = (coordArr) =>
@@ -218,7 +218,7 @@ export default function IndoorMap({
             if (f.properties?.type !== 'room') return null;
             if (f.geometry?.type !== 'Polygon') return null;
             const ring = f.geometry.coordinates[0];
-            const pts  = ring.map(([lng, lat]) => project(lng, lat).join(',')).join(' ');
+            const pts = ring.map(([lng, lat]) => project(lng, lat).join(',')).join(' ');
             const name = f.properties.name || '';
             const roomId = f.properties.roomId || f.properties.name;
             const [cx, cy] = project(
@@ -239,7 +239,7 @@ export default function IndoorMap({
                     y={cy}
                     textAnchor="middle"
                     fill="#1e293b"
-                    fontSize={10 / zoom}
+                    fontSize={14 / zoom}
                     fontWeight="600"
                   >
                     {name.length > 16 ? name.slice(0, 15) + '…' : name}
@@ -309,12 +309,6 @@ export default function IndoorMap({
       {/* Route legend — shown only when a route is active */}
       {routeCoords && routeCoords.length > 1 && (
         <View style={styles.legend} pointerEvents="none">
-          <View style={styles.legendRow}>
-            <View style={[styles.legendDot, { backgroundColor: accessible ? '#16a34a' : '#2563eb' }]} />
-            <Text style={styles.legendText}>
-              {accessible ? '♿ Accessible route (ramp)' : '🚶 Standard route (stairs ok)'}
-            </Text>
-          </View>
           {outsideApproach && (
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: '#d97706' }]} />

@@ -9,8 +9,10 @@ import IndoorMap from '../components/IndoorMap';
 import { useSocket } from '../contexts/SocketContext';
 import { colors, spacing, radius } from '../theme';
 
-const STATION_LAT  = 32.81261;
-const STATION_LNG  = 74.81924;
+const COLLEGE_LAT = 32.81261;
+const COLLEGE_LNG = 74.81924;
+const STATION_LAT = 32.704787;
+const STATION_LNG = 74.880537;
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5pa2V0bWFuaGFzODAxIiwiYSI6ImNtOGxyNDNldDA4NDIyanBsYnFuczE5cjcifQ.7HPta07dHTFnFsGDrrih1g';
 
 const LEAFLET_HTML = `
@@ -102,10 +104,11 @@ const LEAFLET_HTML = `
 
   <script>
     var MAPBOX_TOKEN = '${MAPBOX_TOKEN}';
+    var COLLEGE = [${COLLEGE_LAT}, ${COLLEGE_LNG}];
     var STATION = [${STATION_LAT}, ${STATION_LNG}];
 
     /* ── Map init ── */
-    var map = L.map('map', { center: STATION, zoom: 16, zoomControl: false });
+    var map = L.map('map', { center: COLLEGE, zoom: 12, zoomControl: false });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer(
@@ -119,7 +122,16 @@ const LEAFLET_HTML = `
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
     });
 
-    /* ── Station marker ── */
+    /* ── Markers ── */
+    var collegeIcon = L.divIcon({
+      className:'',
+      html:'<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">🏫</div>',
+      iconSize:[36,36], iconAnchor:[18,18], popupAnchor:[0,-20],
+    });
+    L.marker(COLLEGE, { icon: collegeIcon })
+      .addTo(map)
+      .bindPopup('<b style="font-size:13px">College Campus</b><br/><span style="font-size:11px;color:#666">Switch to Indoor to navigate inside</span>');
+
     var stationIcon = L.divIcon({
       className:'',
       html:'<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">🚉</div>',
@@ -283,15 +295,15 @@ const LEAFLET_HTML = `
 
 export default function MapScreen() {
   const { crowdData } = useSocket();
-  const [mode, setMode]         = useState('outdoor');
-  const [geojson, setGeojson]   = useState(null);
-  const [loading, setLoading]   = useState(true);
+  const [mode, setMode] = useState('outdoor');
+  const [geojson, setGeojson] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const webviewRef = useRef(null);
 
   useEffect(() => {
     indoorNavAPI.getGeoJson()
-      .then(r  => setGeojson(r.data))
+      .then(r => setGeojson(r.data))
       .catch(err => console.warn('[Map] Indoor GeoJSON load failed:', err?.message || err))
       .finally(() => setLoading(false));
   }, []);
@@ -303,19 +315,19 @@ export default function MapScreen() {
   const handleWebViewMessage = async (event) => {
     try {
       const msg = JSON.parse(event.nativeEvent.data);
-      
+
       if (msg.type === 'MAP_READY') {
         setMapReady(true);
         console.log('[Map] Outdoor WebView map ready');
-      } 
-      
+      }
+
       else if (msg.type === 'REQUEST_LOCATION') {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           webviewRef.current?.injectJavaScript(`window.locationErrorFromNative("Permission denied"); true;`);
           return;
         }
-        
+
         try {
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           const { latitude, longitude, accuracy } = loc.coords;
@@ -326,7 +338,7 @@ export default function MapScreen() {
           webviewRef.current?.injectJavaScript(`window.locationErrorFromNative("${err.message}"); true;`);
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   return (
@@ -407,9 +419,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderBright,
   },
-  toggleBtn:        { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md },
-  toggleBtnActive:  { backgroundColor: colors.accentSaffron },
-  toggleText:       { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  toggleBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md },
+  toggleBtnActive: { backgroundColor: colors.accentSaffron },
+  toggleText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
   toggleTextActive: { color: colors.bgPrimary },
 
   loadingOverlay: {

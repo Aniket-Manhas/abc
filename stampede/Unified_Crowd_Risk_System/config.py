@@ -8,11 +8,11 @@ GRID_COLS = 6          # Number of columns to divide the frame into
 
 # ── YOLO Detection ────────────────────────────────────────────────────────────
 YOLO_MODEL_PATH = "yolov8s.pt"   # Path to YOLOv8 weights
-YOLO_CONF       = 0.40           # Minimum confidence for detections (0–1)
-YOLO_IMG_SIZE   = 416            # Smaller → faster inference (was 640)
+YOLO_CONF       = 0.35           # Minimum confidence for detections (0–1)
+YOLO_IMG_SIZE   = 640            # Higher size for better accuracy
 
 # ── Performance / Lag Reduction ───────────────────────────────────────────────
-PROCESS_WIDTH   = 640   # Resize frame to this width before any processing
+PROCESS_WIDTH   = 1024  # Higher resolution for better detection
                         # (maintains aspect ratio; reduces YOLO + flow cost)
 CAPTURE_BUFFER  = 1     # cv2.CAP_PROP_BUFFERSIZE — 1 = always get latest frame
 DRAIN_FRAMES    = 4     # Stale frames to skip per update cycle (kills buffer lag)
@@ -63,8 +63,8 @@ FLOW_MIN_MAG    = 0.8   # Raise noise floor (was 0.5) — ignore tiny motions
 
 # ── Visualiser ────────────────────────────────────────────────────────────────
 HEATMAP_ALPHA   = 0.40
-DRAW_BBOXES     = True
-DRAW_FLOW       = True
+DRAW_BBOXES     = False
+DRAW_FLOW       = False
 DRAW_HEATMAP    = True
 DRAW_GRID_LINES = True
 

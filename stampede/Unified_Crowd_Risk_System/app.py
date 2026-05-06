@@ -107,16 +107,32 @@ class VideoCamera(object):
 
         self.latest_frame = None   # JPEG bytes — served to browser
         self.stopped      = False
+        self.raw_frame    = None
+
+        self.reader_thread = threading.Thread(target=self._reader, args=())
+        self.reader_thread.daemon = True
+        self.reader_thread.start()
 
         self.thread = threading.Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
+
+    def _reader(self):
+        """Dedicated thread to constantly grab the latest frame, preventing buffer lag."""
+        while not self.stopped:
+            ret, frame = self.video.read()
+            if ret:
+                self.raw_frame = frame
+            else:
+                time.sleep(0.01)
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def stop(self):
         """Cleanly signal the thread to stop, then release the capture."""
         self.stopped = True
+        if hasattr(self, 'reader_thread'):
+            self.reader_thread.join(timeout=1.0)
         self.thread.join(timeout=3.0)
         self.video.release()
 
@@ -132,16 +148,10 @@ class VideoCamera(object):
     def update(self):
         global global_metrics
         while not self.stopped:
-            # ── Drain stale buffered frames ───────────────────────────────────
-            # grab() advances the capture position without decoding.
-            # This discards any frames that piled up while we were processing,
-            # ensuring retrieve() gives us the LATEST frame.
-            for _ in range(config.DRAIN_FRAMES):
-                if not self.video.grab():
-                    break
-            success, frame = self.video.retrieve()
+            # Grab the latest frame populated by the reader thread
+            frame = self.raw_frame
 
-            if not success or frame is None:
+            if frame is None:
                 time.sleep(0.01)
                 continue
 

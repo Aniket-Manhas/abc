@@ -1,0 +1,23 @@
+{
+  "translation": {
+    "admin_overview": "व्यवस्थापक अवलोकन",
+    "station_control": "सहयात्री जंक्शन स्टेशन नियंत्रण",
+    "live": "लाइव",
+    "disconnected": "ऑफ़लाइन",
+    "high_density": "उच्च घनत्व क्षेत्र",
+    "active_alerts": "सक्रिय अलर्ट",
+    "today_navs": "आज के नेविगेशन",
+    "total_navs": "कुल नेविगेशन",
+    "recent_alerts": "हाल के अलर्ट",
+    "view_all": "सभी देखें",
+    "no_alerts": "कोई सक्रिय अलर्ट नहीं",
+    "crowd_hotspots": "भीड़ हॉटस्पॉट",
+    "monitor": "निगरानी करें",
+    "all_clear": "सभी क्षेत्र कम घनत्व वाले हैं",
+    "quick_actions": "त्वरित कार्रवाइयां",
+    "station_editor": "स्टेशन संपादक",
+    "send_notification": "सूचना भेजें",
+    "analytics": "एनालिटिक्स",
+    "crowd_monitor": "भीड़ मॉनिटर"
+  }
+}

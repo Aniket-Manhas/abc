@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
+import { useTranslation } from 'react-i18next';
 import { alertsAPI, analyticsAPI_req } from '../../services/api';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const { crowdData, connected, adminAlerts } = useSocket();
   const navigate = useNavigate();
   const [usageStats, setUsageStats] = useState(null);
@@ -32,22 +34,22 @@ export default function AdminDashboard() {
   const activeAlerts = adminAlerts.filter(a => a.status === 'active').length;
 
   const stats = [
-    { icon: '🔴', label: 'High Density Zones', value: crowdCounts.high, color: 'var(--crowd-high)', bg: 'rgba(239,68,68,0.1)', to: '/admin/crowd' },
-    { icon: '🚨', label: 'Active Alerts', value: activeAlerts, color: '#f97316', bg: 'rgba(249,115,22,0.1)', to: '/admin/alerts' },
-    { icon: '🧭', label: "Today's Navigations", value: usageStats?.todayNavigations || 0, color: 'var(--accent-blue)', bg: 'rgba(59,130,246,0.1)', to: '/admin/analytics' },
-    { icon: '📊', label: 'Total Navigations', value: usageStats?.totalNavigations || 0, color: 'var(--accent-cyan)', bg: 'rgba(6,182,212,0.1)', to: '/admin/analytics' },
+    { icon: '🔴', label: t('high_density'), value: crowdCounts.high, color: 'var(--crowd-high)', bg: 'rgba(239,68,68,0.1)', to: '/admin/crowd' },
+    { icon: '🚨', label: t('active_alerts'), value: activeAlerts, color: '#f97316', bg: 'rgba(249,115,22,0.1)', to: '/admin/alerts' },
+    { icon: '🧭', label: t('today_navs'), value: usageStats?.todayNavigations || 0, color: 'var(--accent-blue)', bg: 'rgba(59,130,246,0.1)', to: '/admin/analytics' },
+    { icon: '📊', label: t('total_navs'), value: usageStats?.totalNavigations || 0, color: 'var(--accent-cyan)', bg: 'rgba(6,182,212,0.1)', to: '/admin/analytics' },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1>📊 Admin Overview</h1>
-          <p>Sahyatri Junction Station Control</p>
+          <h1>📊 {t('admin_overview')}</h1>
+          <p>{t('station_control')}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: connected ? 'var(--crowd-low)' : 'var(--crowd-high)' }}>
           <div style={{ width: 9, height: 9, borderRadius: '50%', background: connected ? 'var(--crowd-low)' : 'var(--crowd-high)', animation: 'pulse-dot 2s infinite' }} />
-          {connected ? 'Live' : 'Disconnected'}
+          {connected ? t('live') : t('disconnected')}
         </div>
       </div>
 
@@ -68,13 +70,13 @@ export default function AdminDashboard() {
         {/* Active alerts */}
         <div className="card">
           <div className="section-header">
-            <div className="section-title">🚨 Recent Alerts</div>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.875rem' }} onClick={() => navigate('/admin/alerts')}>View All</button>
+            <div className="section-title">🚨 {t('recent_alerts')}</div>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.875rem' }} onClick={() => navigate('/admin/alerts')}>{t('view_all')}</button>
           </div>
           {adminAlerts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
-              No active alerts
+              {t('no_alerts')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -95,8 +97,8 @@ export default function AdminDashboard() {
         {/* Crowd hotspots */}
         <div className="card">
           <div className="section-header">
-            <div className="section-title">🔥 Crowd Hotspots</div>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.875rem' }} onClick={() => navigate('/admin/crowd')}>Monitor</button>
+            <div className="section-title">🔥 {t('crowd_hotspots')}</div>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.875rem' }} onClick={() => navigate('/admin/crowd')}>{t('monitor')}</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {Object.entries(crowdData)
@@ -111,7 +113,7 @@ export default function AdminDashboard() {
                 </div>
               ))}
             {Object.values(crowdData).every(v => (typeof v === 'string' ? v : v?.density) === 'low') && (
-              <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🟢 All zones low density</div>
+              <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>🟢 {t('all_clear')}</div>
             )}
           </div>
         </div>
@@ -119,13 +121,13 @@ export default function AdminDashboard() {
 
       {/* Quick actions */}
       <div>
-        <div className="section-title" style={{ marginBottom: '1rem' }}>⚡ Quick Actions</div>
+        <div className="section-title" style={{ marginBottom: '1rem' }}>⚡ {t('quick_actions')}</div>
         <div className="grid-4 grid">
           {[
-            { icon: '🗺️', label: 'Station Editor', to: '/admin/editor' },
-            { icon: '🔔', label: 'Send Notification', to: '/admin/notifications' },
-            { icon: '📈', label: 'Analytics', to: '/admin/analytics' },
-            { icon: '🔴', label: 'Crowd Monitor', to: '/admin/crowd' },
+            { icon: '🗺️', label: t('station_editor'), to: '/admin/editor' },
+            { icon: '🔔', label: t('send_notification'), to: '/admin/notifications' },
+            { icon: '📈', label: t('analytics'), to: '/admin/analytics' },
+            { icon: '🔴', label: t('crowd_monitor'), to: '/admin/crowd' },
           ].map(a => (
             <button key={a.to} className="card" style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate(a.to)}>
               <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>{a.icon}</div>

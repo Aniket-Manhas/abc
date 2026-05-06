@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Switch,
+  ActivityIndicator, Switch, TextInput, Keyboard
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as Location from 'expo-location';
@@ -37,6 +37,7 @@ export default function NavigationScreen() {
   const routeDebounceRef = useRef(null);
 
   // ── GeoJSON map data ───────────────────────────────────────
+  const [venue,        setVenue]        = useState('jammu'); // 'jammu' or 'college'
   const [geojson,      setGeojson]      = useState(null);
   const [loadingMap,   setLoadingMap]   = useState(true);
   const [mapError,     setMapError]     = useState('');
@@ -50,25 +51,32 @@ export default function NavigationScreen() {
   // ── Route state ────────────────────────────────────────────
   const [destination,    setDestination]    = useState('');
   const [destinationName, setDestinationName] = useState('');
+  const [destSearch,     setDestSearch]     = useState('');
+  const [showDestList,   setShowDestList]   = useState(false);
   const [accessible,     setAccessible]     = useState(false);
   const [routeCoords,    setRouteCoords]    = useState(null);
   const [outsideApproach,setOutsideApproach] = useState(null);
   const [routeLoading,   setRouteLoading]   = useState(false);
   const [routeError,     setRouteError]     = useState('');
   const [routeDistance,  setRouteDistance]  = useState(null);
+  const [mockStartId,    setMockStartId]    = useState('');
 
   // ── Tab ────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('map'); // map | crowd
 
-  // ── Load GeoJSON on mount ──────────────────────────────────
+  // ── Load GeoJSON on mount & venue change ───────────────────
   useEffect(() => {
     setLoadingMap(true);
     setMapError('');
-    indoorNavAPI.getGeoJson()
+    setDestination('');
+    setDestinationName('');
+    
+    indoorNavAPI.loadMap(venue === 'jammu')
+      .then(() => indoorNavAPI.getGeoJson())
       .then(r => setGeojson(r.data))
-      .catch(e => setMapError('Could not load station floor plan. Is the indoor nav server running on port 4000?'))
+      .catch(e => setMapError('Could not load floor plan. Is the indoor nav server running?'))
       .finally(() => setLoadingMap(false));
-  }, []);
+  }, [venue]);
 
   // ── GPS toggle ─────────────────────────────────────────────
   useEffect(() => {
@@ -160,10 +168,20 @@ export default function NavigationScreen() {
     if (!geojson) return [];
     return (geojson.features || [])
       .filter(f => f.properties?.type === 'room')
-      .map(f => ({
-        id:   f.properties.roomId || f.properties.name,
-        name: f.properties.name  || f.properties.roomId,
-      }))
+      .map((f, idx) => {
+        let center = null;
+        if (f.geometry?.type === 'Polygon') {
+          const ring = f.geometry.coordinates[0];
+          const clng = ring.reduce((s, c) => s + c[0], 0) / ring.length;
+          const clat = ring.reduce((s, c) => s + c[1], 0) / ring.length;
+          center = [clng, clat];
+        }
+        return {
+          id:   f.properties.roomId || f.properties.name || `room-${idx}`,
+          name: f.properties.name  || f.properties.roomId,
+          center,
+        };
+      })
       .filter(r => r.id);
   }, [geojson]);
 
@@ -215,23 +233,74 @@ export default function NavigationScreen() {
       {/* ── Control panel ── */}
       <View style={styles.panel}>
 
-        {/* Destination picker */}
+        {/* Venue selector */}
+        <Text style={styles.label}>Venue</Text>
+        <View style={[styles.pickerBox, { marginBottom: 6 }]}>
+          <Picker
+            selectedValue={venue}
+            onValueChange={setVenue}
+            style={styles.picker}
+            mode="dropdown"
+            dropdownIconColor={colors.textMuted}
+          >
+            <Picker.Item label="🏫 College Campus" value="college" />
+            <Picker.Item label="🚉 Jammu Station" value="jammu" />
+          </Picker>
+        </View>
+
+        {/* Mock Start Location picker (only when GPS is off) */}
+        {!useLiveGPS && (
+          <>
+            <Text style={styles.label}>Start Location (Mock GPS)</Text>
+            <View style={styles.pickerBox}>
+              <Picker
+                selectedValue={mockStartId}
+                onValueChange={v => {
+                  setMockStartId(v);
+                  if (!v) return;
+                  const room = rooms.find(r => r.id === v);
+                  if (room && room.center) {
+                    setUserLngLat(room.center);
+                    triggerRouteFetch(room.center);
+                  }
+                }}
+                style={styles.picker}
+                mode="dropdown"
+                dropdownIconColor={colors.textMuted}
+              >
+                <Picker.Item label="— Pick start to test route —" value="" />
+                {rooms.map((r, i) => (
+                  <Picker.Item key={`start-${r.id}-${i}`} label={r.name} value={r.id} />
+                ))}
+              </Picker>
+            </View>
+          </>
+        )}
+
+        {/* Destination Search */}
         <Text style={styles.label}>Destination</Text>
         <View style={styles.pickerBox}>
           <Picker
             selectedValue={destination}
-            onValueChange={v => {
-              const room = rooms.find(r => r.id === v);
-              setDestination(v);
-              setDestinationName(room?.name || v);
+            onValueChange={(val) => {
+              if (!val) {
+                setDestination('');
+                setDestinationName('');
+                return;
+              }
+              const room = rooms.find(r => r.id === val);
+              if (room) {
+                setDestination(room.id);
+                setDestinationName(room.name);
+              }
             }}
             style={styles.picker}
             mode="dropdown"
             dropdownIconColor={colors.textMuted}
           >
-            <Picker.Item label="— Select a room —" value="" />
-            {rooms.map(r => (
-              <Picker.Item key={r.id} label={r.name} value={r.id} />
+            <Picker.Item label="— Choose destination —" value="" />
+            {rooms.map((r, i) => (
+              <Picker.Item key={`dest-${r.id}-${i}`} label={r.name} value={r.id} />
             ))}
           </Picker>
         </View>
@@ -277,7 +346,7 @@ export default function NavigationScreen() {
         {/* Find Route / Recalculate button */}
         <TouchableOpacity
           style={[styles.findBtn, (!destination || routeLoading) && styles.findBtnDisabled]}
-          onPress={fetchRoute}
+          onPress={() => fetchRoute()}
           disabled={!destination || routeLoading}
           activeOpacity={0.8}
         >
@@ -325,13 +394,13 @@ export default function NavigationScreen() {
           {crowdRooms.length === 0 ? (
             <Text style={styles.emptyText}>No rooms loaded</Text>
           ) : (
-            crowdRooms.map(room => {
+            crowdRooms.map((room, i) => {
               const entry = crowdData[room.id];
               const density = entry
                 ? (typeof entry === 'string' ? entry : entry.density)
                 : 'low';
               return (
-                <View key={room.id} style={styles.crowdRow}>
+                <View key={`${room.id}-${i}`} style={styles.crowdRow}>
                   <Text style={styles.crowdName}>{room.name}</Text>
                   <CrowdBadge density={density} />
                 </View>
@@ -364,10 +433,58 @@ const styles = StyleSheet.create({
   pickerBox: {
     backgroundColor: colors.bgElevated, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
+    zIndex: 1,
   },
   picker: { color: colors.textPrimary, height: 44 },
 
-  toggleRow: { flexDirection: 'row', gap: spacing.md },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInputInner: {
+    flex: 1,
+    color: colors.textPrimary,
+    paddingHorizontal: 12,
+    height: '100%',
+  },
+  iconBtn: {
+    paddingHorizontal: 12,
+    height: '100%',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border,
+  },
+  iconBtnText: {
+    color: colors.textMuted,
+    fontSize: 14,
+  },
+  searchResults: {
+    position: 'absolute',
+    top: 46,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  searchResultItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+
+  toggleRow: { flexDirection: 'row', gap: spacing.md, zIndex: 1 },
   toggleItem:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                backgroundColor: colors.bgElevated, borderRadius: radius.md,
                paddingHorizontal: spacing.sm, paddingVertical: 6,

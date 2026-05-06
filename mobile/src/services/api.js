@@ -65,6 +65,14 @@ export const indoorNavAPI = {
   getGeoJson: () => axios.get(`${INDOOR_NAV_URL}/api/geojson`),
 
   /**
+   * Loads a specific map (College or Jammu Station) into the backend engine.
+   */
+  loadMap: (useJammu) => axios.post(`${INDOOR_NAV_URL}/api/load-map`, {
+    useJammu: useJammu,
+    useCollege: !useJammu
+  }),
+
+  /**
    * Computes a route from a lat/lng position to a room ID.
    * @param {number} fromLat  - User latitude
    * @param {number} fromLng  - User longitude

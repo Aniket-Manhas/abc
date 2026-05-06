@@ -3,16 +3,17 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, useWindowDimensions,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { geoAPI } from '../services/api';
 import { colors, spacing, radius, typography } from '../theme';
 
 const QUICK_ACCESS = [
-  { icon: '🧭', label: 'Indoor Navigation', screen: 'Navigate' },
-  { icon: '🚨', label: 'Emergency Help',    screen: 'Emergency' },
-  { icon: '♿', label: 'Accessibility',     screen: 'Accessibility', parent: 'More' },
-  { icon: '🚕', label: 'Last Mile',         screen: 'LastMile',     parent: 'More' },
+  { icon: '🧭', labelKey: 'indoor_nav',     screen: 'Navigate' },
+  { icon: '🚨', labelKey: 'emergency_help', screen: 'Emergency' },
+  { icon: '♿', labelKey: 'accessibility',  screen: 'Accessibility', parent: 'More' },
+  { icon: '🚕', labelKey: 'last_mile',      screen: 'LastMile',     parent: 'More' },
 ];
 
 function StatCard({ icon, label, value, color, bg }) {
@@ -26,6 +27,7 @@ function StatCard({ icon, label, value, color, bg }) {
 }
 
 export default function DashboardScreen({ navigation }) {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { crowdData, connected } = useSocket();
   const [graphData, setGraphData] = useState(null);
@@ -55,16 +57,24 @@ export default function DashboardScreen({ navigation }) {
     return counts;
   })() : null;
 
-  const firstName = user?.name?.split(' ')[0] || 'Passenger';
+  const firstName = user?.name?.split(' ')[0] || t('passenger');
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en');
+  };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {/* Welcome */}
       <View style={styles.welcomeRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>Welcome, {firstName} 👋</Text>
-          <Text style={styles.greetingSub}>Navigate Sahyatri Junction in real time</Text>
+          <Text style={styles.greeting}>{t('welcome')}, {firstName} 👋</Text>
+          <Text style={styles.greetingSub}>{t('greeting_sub')}</Text>
         </View>
+        
+        <TouchableOpacity style={styles.langToggle} onPress={toggleLanguage}>
+          <Text style={styles.langToggleText}>{i18n.language === 'en' ? 'अ' : 'A'}</Text>
+        </TouchableOpacity>
         <View style={[styles.liveChip, {
             borderColor: connected ? colors.crowdLow + '50'
               : booting ? colors.accentSaffron + '50'
@@ -80,7 +90,7 @@ export default function DashboardScreen({ navigation }) {
               : booting ? colors.accentSaffron
               : colors.textMuted
           }]}>
-            {connected ? 'Live' : booting ? 'Connecting…' : 'Offline'}
+            {connected ? t('status_live') : booting ? t('status_connecting') : t('status_offline')}
           </Text>
         </View>
       </View>
@@ -88,11 +98,11 @@ export default function DashboardScreen({ navigation }) {
       {/* Crowd summary */}
       {crowdSummary && (
         <>
-          <Text style={styles.sectionTitle}>📊 Station Crowd</Text>
+          <Text style={styles.sectionTitle}>{t('station_crowd')}</Text>
           <View style={styles.statRow}>
-            <StatCard icon="🟢" label="Clear" value={crowdSummary.low}    color={colors.crowdLow}    bg="rgba(39,174,96,0.1)" />
-            <StatCard icon="🟡" label="Medium" value={crowdSummary.medium} color={colors.crowdMedium} bg="rgba(230,126,34,0.1)" />
-            <StatCard icon="🔴" label="Busy"  value={crowdSummary.high}   color={colors.crowdHigh}   bg="rgba(231,76,60,0.1)" />
+            <StatCard icon="🟢" label={t('clear')} value={crowdSummary.low}    color={colors.crowdLow}    bg="rgba(39,174,96,0.1)" />
+            <StatCard icon="🟡" label={t('medium')} value={crowdSummary.medium} color={colors.crowdMedium} bg="rgba(230,126,34,0.1)" />
+            <StatCard icon="🔴" label={t('busy')}  value={crowdSummary.high}   color={colors.crowdHigh}   bg="rgba(231,76,60,0.1)" />
           </View>
         </>
       )}
@@ -100,7 +110,7 @@ export default function DashboardScreen({ navigation }) {
       {loading && (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={colors.accentSaffron} />
-          <Text style={styles.loadingText}>Loading station data…</Text>
+          <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
       )}
 
@@ -110,11 +120,11 @@ export default function DashboardScreen({ navigation }) {
         onPress={() => navigation.navigate('Emergency')}
         activeOpacity={0.85}
       >
-        <Text style={styles.emergencyBtnText}>🚨  Emergency Alert</Text>
+        <Text style={styles.emergencyBtnText}>{t('emergency_btn')}</Text>
       </TouchableOpacity>
 
       {/* Quick access */}
-      <Text style={styles.sectionTitle}>⚡ Quick Access</Text>
+      <Text style={styles.sectionTitle}>{t('quick_access')}</Text>
       <View style={styles.quickGrid}>
         {QUICK_ACCESS.map(item => (
           <TouchableOpacity
@@ -130,14 +140,14 @@ export default function DashboardScreen({ navigation }) {
             }}
           >
             <Text style={styles.quickIcon}>{item.icon}</Text>
-            <Text style={styles.quickLabel}>{item.label}</Text>
+            <Text style={styles.quickLabel}>{t(item.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* Station info */}
       <View style={styles.stationInfo}>
-        <Text style={styles.stationInfoText}>🚉 Jammu Tawi Station · JAT · Northern Railway</Text>
+        <Text style={styles.stationInfoText}>{t('station_info')}</Text>
       </View>
     </ScrollView>
   );
@@ -147,7 +157,15 @@ const styles = StyleSheet.create({
   screen:  { flex: 1, backgroundColor: colors.bgPrimary },
   content: { padding: spacing.md, paddingBottom: spacing.xl },
 
-  welcomeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
+  welcomeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg, gap: 10 },
+  
+  langToggle: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)'
+  },
+  langToggleText: { color: colors.textPrimary, fontSize: 16, fontWeight: '600' },
   greeting:   { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
   greetingSub:{ fontSize: 13, color: colors.textSecondary, marginTop: 2 },
 

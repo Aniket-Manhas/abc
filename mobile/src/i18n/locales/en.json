@@ -1,0 +1,22 @@
+{
+  "translation": {
+    "welcome": "Welcome",
+    "passenger": "Passenger",
+    "greeting_sub": "Navigate Sahyatri Junction in real time",
+    "status_live": "Live",
+    "status_connecting": "Connecting…",
+    "status_offline": "Offline",
+    "station_crowd": "📊 Station Crowd",
+    "clear": "Clear",
+    "medium": "Medium",
+    "busy": "Busy",
+    "loading": "Loading station data…",
+    "emergency_btn": "🚨 Emergency Alert",
+    "quick_access": "⚡ Quick Access",
+    "indoor_nav": "Indoor Navigation",
+    "emergency_help": "Emergency Help",
+    "accessibility": "Accessibility",
+    "last_mile": "Last Mile",
+    "station_info": "🚉 Jammu Tawi Station · JAT · Northern Railway"
+  }
+}

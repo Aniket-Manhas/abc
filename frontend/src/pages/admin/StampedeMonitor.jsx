@@ -4,10 +4,12 @@ const STAMPEDE_URL = import.meta.env.VITE_STAMPEDE_URL || 'http://localhost:5002
 
 const RISK_CONFIG = {
   'Normal':                      { color: '#27ae60', bg: 'rgba(39,174,96,0.1)',   border: 'rgba(39,174,96,0.25)',   icon: '🟢', level: 0 },
+  'NORMAL':                      { color: '#27ae60', bg: 'rgba(39,174,96,0.1)',   border: 'rgba(39,174,96,0.25)',   icon: '🟢', level: 0 },
   'High Density Cell Detected':  { color: '#e67e22', bg: 'rgba(230,126,34,0.1)',  border: 'rgba(230,126,34,0.25)',  icon: '🟡', level: 1 },
-  'High Density Warning':        { color: '#e67e22', bg: 'rgba(230,126,34,0.12)', border: 'rgba(230,126,34,0.3)',   icon: '⚠️', level: 2 },
+  'MEDIUM RISK':                 { color: '#e67e22', bg: 'rgba(230,126,34,0.12)', border: 'rgba(230,126,34,0.3)',   icon: '⚠️', level: 2 },
   'Critical Density Cell Detected': { color: '#e74c3c', bg: 'rgba(231,76,60,0.12)', border: 'rgba(231,76,60,0.3)', icon: '🔶', level: 3 },
   'CRITICAL RISK':               { color: '#e74c3c', bg: 'rgba(231,76,60,0.18)', border: 'rgba(231,76,60,0.4)',   icon: '🚨', level: 4 },
+  'HIGH RISK':                   { color: '#e74c3c', bg: 'rgba(231,76,60,0.25)', border: 'rgba(231,76,60,0.6)',   icon: '🚨', level: 4 },
 };
 
 function getRiskConfig(status) {

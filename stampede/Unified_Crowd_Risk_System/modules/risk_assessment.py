@@ -125,8 +125,13 @@ class RiskAssessor:
         self._score_buf.append(instant_max)
         smoothed_score = float(np.mean(self._score_buf))
 
-        global_risk = self._classify(smoothed_score)
-        alert_msg   = RISK_ALERTS[global_risk]
+        if global_person_count > 3:
+            global_risk = HIGH_RISK
+            alert_msg   = f"ALERT: Crowd Threshold Exceeded! ({global_person_count} people detected)"
+        else:
+            global_risk = self._classify(smoothed_score)
+            alert_msg   = RISK_ALERTS[global_risk]
+            
         return risk_map, global_risk, alert_msg
 
     # ── Helpers ───────────────────────────────────────────────────────────────

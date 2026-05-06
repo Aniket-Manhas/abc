@@ -1,0 +1,22 @@
+{
+  "translation": {
+    "welcome": "स्वागत है",
+    "passenger": "यात्री",
+    "greeting_sub": "सहयात्री जंक्शन में वास्तविक समय में नेविगेट करें",
+    "status_live": "लाइव",
+    "status_connecting": "जुड़ रहा है…",
+    "status_offline": "ऑफ़लाइन",
+    "station_crowd": "📊 स्टेशन की भीड़",
+    "clear": "खाली",
+    "medium": "मध्यम",
+    "busy": "व्यस्त",
+    "loading": "स्टेशन डेटा लोड हो रहा है…",
+    "emergency_btn": "🚨 आपातकालीन अलर्ट",
+    "quick_access": "⚡ त्वरित पहुँच",
+    "indoor_nav": "इनडोर नेविगेशन",
+    "emergency_help": "आपातकालीन मदद",
+    "accessibility": "सुगम्यता",
+    "last_mile": "लास्ट माइल",
+    "station_info": "🚉 जम्मू तवी स्टेशन · JAT · उत्तर रेलवे"
+  }
+}
