@@ -1,191 +1,983 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Railway Station Surveillance Terminal</title>
-    <style>
-        :root {
-            --bg-color: #0b0c10;
-            --panel-bg: #1f2833;
-            --text-main: #c5c6c7;
-            --accent: #66fcf1;
-            --accent-dim: #45a29e;
-            --risk-normal: #50CD32;
-            --risk-medium: #FFC800;
-            --risk-high: #ff3b3b;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sahyatri — Crowd Density Monitor</title>
+  <style>
+    :root {
+      --bg-color: #0b0d12;
+      --panel-bg: rgba(20, 23, 32, 0.65);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent: #66fcf1;
+      --accent2: #3b82f6;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --glass-blur: blur(12px);
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        /* Header */
-        header { padding: 15px 20px; background: var(--panel-bg); border-bottom: 2px solid var(--accent-dim); display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1.5rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; }
-        .live-badge { background: red; color: white; padding: 3px 10px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; animation: pulse 2s infinite; }
+    body {
+      background: var(--bg-color);
+      background-image: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                        radial-gradient(circle at 85% 30%, rgba(102, 252, 241, 0.1), transparent 25%);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow: hidden; /* App-like feel */
+    }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
+    header {
+      background: var(--panel-bg);
+      backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
 
-        /* Main Container */
-        .container { display: flex; flex: 1; padding: 20px; gap: 20px; }
+    header h1 {
+      font-size: 1.1rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
 
-        /* Video Feed */
-        .video-container { flex: 3; background: #000; border: 2px solid var(--accent-dim); border-radius: 8px; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .video-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
-        .vid-overlay-corners { position: absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
-        .vid-corner { position: absolute; width: 40px; height: 40px; border-color: var(--accent); border-style: solid; }
-        .vid-corner.tl { top: 10px; left: 10px; border-width: 3px 0 0 3px; }
-        .vid-corner.tr { top: 10px; right: 10px; border-width: 3px 3px 0 0; }
-        .vid-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 3px 3px; }
-        .vid-corner.br { bottom: 10px; right: 10px; border-width: 0 3px 3px 0; }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e74c3c;
+      animation: blink 1.2s infinite;
+      display: inline-block;
+      margin-right: 6px;
+    }
 
-        /* Sidebar */
-        .sidebar { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: var(--panel-bg); padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent); }
-        .card h2 { font-size: 1.1rem; color: var(--text-main); border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-        
-        /* Metrics */
-        .metric { margin-bottom: 15px; }
-        .metric-label { font-size: 0.9rem; color: #888; text-transform: uppercase; }
-        .metric-val { font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: var(--accent); }
-        
-        #risk-val { padding: 5px 10px; border-radius: 4px; display: inline-block; color: #000; }
-        .risk-normal { background: var(--risk-normal); }
-        .risk-medium-risk { background: var(--risk-medium); }
-        .risk-high-risk   { background: var(--risk-high); color: white !important; }
+    @keyframes blink {
 
-        .alert-box { background: rgba(255, 59, 59, 0.1); border: 1px solid var(--risk-high); padding: 10px; border-radius: 4px; color: var(--risk-high); font-size: 0.9rem; }
+      0%,
+      100% {
+        opacity: 1
+      }
 
-        /* Camera Controls */
-        select, input, button { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; color: var(--text-main); border: 1px solid #444; border-radius: 4px; }
-        button { background: var(--accent-dim); color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: var(--accent); }
-        
-        .camera-adder { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #444; }
-        .camera-adder h3 { font-size: 0.9rem; margin-bottom: 10px; color: #888; }
+      50% {
+        opacity: .2
+      }
+    }
 
-    </style>
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      padding: 16px;
+      height: calc(100vh - 56px);
+    }
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .right {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+    }
+
+    /* Source selector tabs */
+    .src-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .src-tab {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .85rem;
+      text-align: center;
+      transition: all .3s ease;
+      font-weight: 500;
+    }
+
+    .src-tab.active {
+      border-color: var(--accent2);
+      color: var(--accent2);
+      background: rgba(59, 130, 246, .08);
+    }
+
+    /* Source panels */
+    .src-panel {
+      display: none;
+      background: var(--panel-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .src-panel.active {
+      display: block;
+    }
+
+    .inp {
+      width: 100%;
+      background: #0e1018;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: .85rem;
+      outline: none;
+    }
+
+    .inp:focus {
+      border-color: var(--accent2);
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 600;
+      transition: .15s;
+    }
+
+    .btn-primary {
+      background: var(--accent2);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-primary:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: .78rem;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.over {
+      border-color: var(--accent2);
+      background: rgba(59, 130, 246, .05);
+    }
+
+    .drop-zone .ico {
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+
+    .drop-zone .hint {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin-top: 8px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent2);
+      width: 0;
+      transition: width .3s;
+    }
+
+    /* Video */
+    .video-wrap {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: var(--glass-blur);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .video-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .video-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .video-placeholder .big {
+      font-size: 3rem;
+    }
+
+    .badge {
+      position: absolute;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: .68rem;
+      font-weight: 700;
+    }
+
+    .badge-live {
+      top: 10px;
+      left: 10px;
+      background: rgba(192, 57, 43, .9);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-engine {
+      top: 10px;
+      right: 10px;
+      background: rgba(59, 130, 246, .9);
+      color: #fff;
+      display: none;
+    }
+
+    .badge-frame {
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, .6);
+      color: var(--muted);
+      font-size: .65rem;
+    }
+
+    /* Sidebar cards */
+    .card {
+      background: var(--panel-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .card-title {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: .85rem;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .stat {
+      flex: 1;
+    }
+
+    .stat-label {
+      font-size: .62rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .stat-unit {
+      font-size: .62rem;
+      color: var(--muted);
+    }
+
+    .score-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, .08);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .6s, background .4s;
+    }
+
+    /* Density grid */
+    .density-grid {
+      display: grid;
+      gap: 2px;
+      margin-top: 6px;
+    }
+
+    .density-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .45rem;
+      font-weight: 700;
+      color: #fff;
+      transition: background .4s;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: .65rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    /* Alert */
+    .alert-box {
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: .8rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    /* Log */
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-size: .75rem;
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .log-time {
+      color: var(--muted);
+      font-family: monospace;
+      width: 65px;
+      flex-shrink: 0;
+    }
+
+    /* Auth Overlay */
+    #auth-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(11, 13, 18, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .auth-box {
+      background: rgba(20, 23, 32, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 40px;
+      border-radius: 16px;
+      width: 380px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .auth-box h2 {
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .auth-box p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .auth-box input {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 8px;
+      color: #fff;
+      margin-bottom: 16px;
+      font-size: 1rem;
+    }
+
+    .auth-box button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+    }
+
+    #user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      border: 1px solid var(--border-color);
+    }
+
+    @media(max-width:900px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
+  <!-- Auth Overlay -->
+  <div id="auth-overlay">
+    <div class="auth-box">
+      <h2>Sahyatri Security</h2>
+      <p>Please authenticate to access the Crowd Risk Dashboard.</p>
+      <input type="email" id="auth-email" placeholder="Admin Email Address" />
+      <button class="btn btn-primary" onclick="login()">Access System</button>
+    </div>
+  </div>
 
-    <header>
-        <h1>SYS-Terminal // Crowd Risk Assessment</h1>
-        <div class="live-badge">● LIVE</div>
-    </header>
+  <header>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <h1>🎯 Sahyatri — UCRS</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;font-size:.85rem">
+      <div id="user-badge" style="display:none;">
+        <span id="user-email"></span>
+        <button onclick="logout()" style="background:transparent;border:none;color:var(--accent2);cursor:pointer;font-weight:600">Logout</button>
+      </div>
+      <span id="engine-badge"
+        style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:4px 12px;color:#3b82f6;font-weight:700;display:none">⚡
+        P2PNet</span>
+      <span style="font-weight:600;"><span class="live-dot"></span>LIVE</span>
+    </div>
+  </header>
 
-    <div class="container">
-        <!-- Video Array -->
-        <div class="video-container">
-            <img src="/video_feed" alt="Video Stream Loading...">
-            <div class="vid-overlay-corners">
-                <div class="vid-corner tl"></div>
-                <div class="vid-corner tr"></div>
-                <div class="vid-corner bl"></div>
-                <div class="vid-corner br"></div>
-            </div>
+  <div class="layout">
+    <!-- LEFT: source + video -->
+    <div class="left">
+      <!-- Source tabs -->
+      <div class="src-tabs">
+        <div class="src-tab active" onclick="switchSrc('camera')" id="tab-camera">📷 Live Camera</div>
+        <div class="src-tab" onclick="switchSrc('video')" id="tab-video">📁 Video File</div>
+        <div class="src-tab" onclick="switchSrc('ipcam')" id="tab-ipcam">📡 IP Webcam</div>
+      </div>
+
+      <!-- Camera panel -->
+      <div class="src-panel active" id="panel-camera">
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="cam-select" class="inp" style="flex:1">
+            {% for cam in cameras %}
+            <option value="{{ cam.id }}" {% if cam.id==current_cam_id %}selected{% endif %}>{{ cam.location }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="switchCamera()">▶ Connect</button>
+          <button class="btn btn-sm" style="background:var(--panel);border:1px solid var(--border);color:var(--text)"
+            onclick="refreshStream()">🔄</button>
         </div>
+      </div>
 
-        <!-- Telemetry Sidebar -->
-        <div class="sidebar">
-            
-            <!-- Live Status -->
-            <div class="card">
-                <h2>Live Telemetry</h2>
-                <div class="metric">
-                    <div class="metric-label">Target Location</div>
-                    <div class="metric-val" id="loc-val" style="font-size: 1.1rem;">Platform 1</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">Headcount</div>
-                    <div class="metric-val" id="count-val">0</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">System Risk Status</div>
-                    <div class="metric-val" id="risk-val" class="risk-normal">NORMAL</div>
-                </div>
-                <div id="alert-box" class="alert-box" style="display: none;">
-                    Situation Normal.
-                </div>
-            </div>
-
-            <!-- Source Control -->
-            <div class="card">
-                <h2>Source Control</h2>
-                
-                <label class="metric-label">Active Camera Feed</label>
-                <select id="camera-select" onchange="switchCamera()">
-                    {% for cam in cameras %}
-                        <option value="{{ cam.id }}" {% if cam.id == current_cam_id %}selected{% endif %}>
-                            {{ cam.location }}
-                        </option>
-                    {% endfor %}
-                </select>
-
-                <div class="camera-adder">
-                    <h3>+ Add Mobile IP Webcam</h3>
-                    <input type="text" id="new-url" placeholder="http://192.168.1.5:8080/video">
-                    <input type="text" id="new-loc" placeholder="Location Name (e.g. South Gate)">
-                    <button onclick="addCamera()">Connect Stream</button>
-                    <p style="font-size: 0.7rem; color: #666; margin-top:5px;">Hint: Use "IP Webcam" app on Android.</p>
-                </div>
-            </div>
-
+      <!-- Video file panel -->
+      <div class="src-panel" id="panel-video">
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+          ondragover="ev.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')"
+          ondrop="handleDrop(event)">
+          <div class="ico" id="drop-ico">📤</div>
+          <div id="drop-label">Click or drag a video file here</div>
+          <div class="hint">MP4 · AVI · MOV · MKV — full frame-by-frame analysis</div>
+          <input id="file-input" type="file" accept="video/*" style="display:none" onchange="handleFileSelect(this)">
         </div>
+        <div class="progress-bar" id="upload-progress">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-primary" id="upload-btn" onclick="uploadVideo()" disabled style="flex:1">⬆ Upload &amp;
+            Analyse</button>
+          <span id="upload-status" style="font-size:.78rem;color:var(--muted);align-self:center"></span>
+        </div>
+      </div>
+
+      <!-- IP Webcam panel -->
+      <div class="src-panel" id="panel-ipcam">
+        <div style="display:flex;gap:8px">
+          <input id="ip-url" class="inp" style="flex:1" placeholder="http://192.168.x.x:8080/video">
+          <input id="ip-loc" class="inp" style="width:160px" placeholder="Location name">
+          <button class="btn btn-primary btn-sm" onclick="addIpCam()">+ Add</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Use IP Webcam app on Android · MJPEG streams
+          supported</div>
+      </div>
+
+      <!-- Video feed -->
+      <div class="video-wrap" id="video-wrap">
+        <div class="video-placeholder" id="placeholder">
+          <div class="big">📹</div>
+          <div>Select a source above to start</div>
+        </div>
+        <img id="stream-img" style="display:none" alt="Crowd analysis feed">
+        <div class="badge badge-live"><span class="live-dot" style="width:6px;height:6px;margin:0"></span> LIVE</div>
+        <div class="badge badge-engine" id="p2pnet-badge">P2PNet</div>
+        <div class="badge badge-frame" id="frame-badge"></div>
+      </div>
     </div>
 
-    <script>
-        // Fetch metrics every second
-        setInterval(async () => {
-            try {
-                const res = await fetch('/metrics');
-                const data = await res.json();
-                
-                document.getElementById('loc-val').innerText = data.location;
-                document.getElementById('count-val').innerText = data.person_count;
-                
-                const riskEl = document.getElementById('risk-val');
-                riskEl.innerText = data.risk_level;
-                riskEl.className = 'metric-val risk-' + data.risk_level.toLowerCase().replace(' ', '-');
+    <!-- RIGHT: metrics sidebar -->
+    <div class="right">
+      <!-- Risk status -->
+      <div class="card" id="risk-card">
+        <div class="card-title">⚡ Risk Status</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span id="risk-icon" style="font-size:2rem">⏳</span>
+          <div>
+            <div id="risk-label" class="risk-badge" style="background:rgba(39,174,96,.15);color:#27ae60">SAFE</div>
+            <div style="font-size:.68rem;color:var(--muted);margin-top:3px">Current density level</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-label">Persons (Now)</div>
+            <div class="stat-val" id="persons-val" style="color:#27ae60">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Density</div>
+            <div class="stat-val" id="density-val" style="color:#27ae60">0.00</div>
+            <div class="stat-unit">persons/m²</div>
+          </div>
+        </div>
+        <div class="stat-row" style="margin-top:6px">
+          <div class="stat">
+            <div class="stat-label">Peak Count</div>
+            <div class="stat-val" id="peak-val" style="color:#f39c12;font-size:1.2rem">0</div>
+            <div class="stat-unit">max in any frame</div>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:4px">
+            <span>Risk Score</span><span id="score-label">0/100</span>
+          </div>
+          <div class="score-bar">
+            <div class="score-fill" id="score-fill" style="width:0%;background:#27ae60"></div>
+          </div>
+        </div>
+      </div>
 
-                const alertEl = document.getElementById('alert-box');
-                if (data.risk_level !== 'NORMAL') {
-                    alertEl.style.display = 'block';
-                    alertEl.innerText = data.alert_msg;
-                    alertEl.style.color = data.risk_level === 'HIGH RISK' ? 'var(--risk-high)' : 'var(--risk-medium)';
-                    alertEl.style.borderColor = alertEl.style.color;
-                } else {
-                    alertEl.style.display = 'none';
-                }
-            } catch(e) { console.error(e); }
-        }, 1000);
+      <!-- Alert -->
+      <div class="alert-box" id="alert-box"></div>
 
-        // Switch camera logic
-        async function switchCamera() {
-            const id = document.getElementById('camera-select').value;
-            await fetch(`/switch/${id}`, { method: 'POST' });
-            // Reload page to refresh video stream
-            window.location.reload(); 
+      <!-- Zone density grid -->
+      <div class="card">
+        <div class="card-title">📊 Zone Density Map (persons/m²)</div>
+        <div class="density-grid" id="density-grid" style="grid-template-columns:repeat(6,1fr)"></div>
+        <div class="legend">
+          <span><span class="dot" style="background:#27ae60"></span>Safe &lt;1</span>
+          <span><span class="dot" style="background:#f39c12"></span>Warn 1–2</span>
+          <span><span class="dot" style="background:#e74c3c"></span>High 2–4</span>
+          <span><span class="dot" style="background:#c0392b"></span>Danger &gt;4</span>
+        </div>
+      </div>
+
+      <!-- Thresholds -->
+      <div class="card">
+        <div class="card-title">⚙️ Fruin LOS Thresholds</div>
+        <table style="width:100%;font-size:.78rem;border-collapse:collapse">
+          <tr>
+            <td style="padding:3px 0;color:var(--muted)">🟢 Safe</td>
+            <td style="text-align:right;color:#27ae60;font-weight:600">&lt; 1.0 p/m²</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted)">⚠️ Warning</td>
+            <td style="text-align:right;color:#f39c12;font-weight:600">1.0 – 2.0</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted)">🔶 High Risk</td>
+            <td style="text-align:right;color:#e74c3c;font-weight:600">2.0 – 4.0</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:var(--muted)">🚨 Danger</td>
+            <td style="text-align:right;color:#c0392b;font-weight:600">≥ 4.0</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Event log -->
+      <div class="card">
+        <div class="card-title">📋 Event Log</div>
+        <div class="log-list" id="log-list">
+          <div style="color:var(--muted);font-size:.75rem;text-align:center;padding:12px">Waiting for events…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const RISK = {
+      'SAFE': { color: '#27ae60', bg: 'rgba(39,174,96,.15)', icon: '🟢' },
+      'WARNING': { color: '#f39c12', bg: 'rgba(243,156,18,.15)', icon: '⚠️' },
+      'HIGH RISK': { color: '#e74c3c', bg: 'rgba(231,76,60,.15)', icon: '🔶' },
+      'DANGER': { color: '#c0392b', bg: 'rgba(192,57,43,.2)', icon: '🚨' },
+    };
+    function rc(s) { return RISK[s] || { color: '#5a5f72', bg: 'rgba(90,95,114,.1)', icon: '⏳' }; }
+
+    let currentMode = 'camera';   // camera | video | ipcam
+    let metricsTimer = null;
+    let logHistory = [];
+
+    // ── Authentication ────────────────────────────────────────────────────────────
+    function checkAuth() {
+      const email = localStorage.getItem('sahyatri_admin_email');
+      if (email) {
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('user-badge').style.display = 'flex';
+        document.getElementById('user-email').textContent = email;
+        return true;
+      }
+      document.getElementById('auth-overlay').style.display = 'flex';
+      document.getElementById('user-badge').style.display = 'none';
+      return false;
+    }
+
+    function login() {
+      const email = document.getElementById('auth-email').value.trim();
+      if (!email || !email.includes('@')) {
+        alert('Please enter a valid admin email.');
+        return;
+      }
+      localStorage.setItem('sahyatri_admin_email', email);
+      checkAuth();
+      // Only start stream after login
+      const select = document.getElementById('cam-select');
+      if (select && select.options.length > 0) switchCamera();
+    }
+
+    function logout() {
+      localStorage.removeItem('sahyatri_admin_email');
+      stopMetrics();
+      hideStream();
+      checkAuth();
+    }
+
+    // ── Source tabs ───────────────────────────────────────────────────────────────
+    function switchSrc(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.src-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.src-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + mode).classList.add('active');
+      document.getElementById('panel-' + mode).classList.add('active');
+      stopMetrics();
+      hideStream();
+    }
+
+    // ── Camera stream ─────────────────────────────────────────────────────────────
+    function switchCamera() {
+      const id = document.getElementById('cam-select').value;
+      fetch('/switch/' + id, { method: 'POST' }).then(() => {
+        startStream('/video_feed?camera=' + id + '&t=' + Date.now(), 'live');
+      });
+    }
+    function refreshStream() { switchCamera(); }
+
+    // ── Video file upload ─────────────────────────────────────────────────────────
+    let selectedFile = null;
+
+    function handleDrop(ev) {
+      ev.preventDefault();
+      document.getElementById('drop-zone').classList.remove('over');
+      const f = ev.dataTransfer.files[0];
+      if (f) setFile(f);
+    }
+    function handleFileSelect(inp) { if (inp.files[0]) setFile(inp.files[0]); }
+    function setFile(f) {
+      selectedFile = f;
+      document.getElementById('drop-ico').textContent = '📁';
+      document.getElementById('drop-label').textContent = f.name;
+      document.getElementById('upload-btn').disabled = false;
+    }
+
+    async function uploadVideo() {
+      if (!selectedFile) return;
+      const btn = document.getElementById('upload-btn');
+      const status = document.getElementById('upload-status');
+      const bar = document.getElementById('upload-progress');
+      const fill = document.getElementById('progress-fill');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Uploading…';
+      bar.style.display = 'block';
+      fill.style.width = '30%';
+      status.textContent = '';
+
+      const fd = new FormData();
+      fd.append('video', selectedFile);
+
+      try {
+        const res = await fetch('/load_video', { method: 'POST', body: fd });
+        const data = await res.json();
+        fill.style.width = '100%';
+        if (data.ok) {
+          status.textContent = '✓ Analysing…';
+          status.style.color = '#27ae60';
+          setTimeout(() => { bar.style.display = 'none'; fill.style.width = '0'; }, 800);
+          startStream('/file_feed?t=' + Date.now(), 'file');
+        } else {
+          status.textContent = data.error || 'Upload failed';
+          status.style.color = '#e74c3c';
+          btn.disabled = false;
+          btn.textContent = '⬆ Upload & Analyse';
         }
+      } catch (e) {
+        status.textContent = 'Error: server not reachable';
+        status.style.color = '#e74c3c';
+        btn.disabled = false;
+        btn.textContent = '⬆ Upload & Analyse';
+      }
+    }
 
-        // Add remote IP webcam
-        async function addCamera() {
-            const source = document.getElementById('new-url').value;
-            const loc = document.getElementById('new-loc').value;
-            if(!source || !loc) return alert("Please fill both fields.");
+    // ── IP cam ────────────────────────────────────────────────────────────────────
+    async function addIpCam() {
+      const url = document.getElementById('ip-url').value.trim();
+      const loc = document.getElementById('ip-loc').value.trim() || 'IP Camera';
+      if (!url) return;
+      const r = await fetch('/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: url, location: loc }) });
+      const d = await r.json();
+      if (d.success) {
+        const opt = document.createElement('option');
+        opt.value = d.id; opt.textContent = loc;
+        document.getElementById('cam-select').appendChild(opt);
+        document.getElementById('cam-select').value = d.id;
+        switchSrc('camera');
+        setTimeout(switchCamera, 100);
+      }
+    }
 
-            const res = await fetch('/settings', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({source: source, location: loc})
-            });
-            const data = await res.json();
-            if(data.success) window.location.reload();
-        }
-    </script>
+    // ── Stream helpers ────────────────────────────────────────────────────────────
+    function startStream(src, type) {
+      stopMetrics();
+      const img = document.getElementById('stream-img');
+      const ph = document.getElementById('placeholder');
+      img.src = src;
+      img.style.display = 'block';
+      ph.style.display = 'none';
+
+      const endpoint = type === 'file' ? '/file_metrics' : '/metrics';
+      metricsTimer = setInterval(() => fetchMetrics(endpoint), 1000);
+    }
+
+    function hideStream() {
+      const img = document.getElementById('stream-img');
+      img.style.display = 'none';
+      img.src = '';
+      document.getElementById('placeholder').style.display = 'flex';
+      resetMetrics();
+    }
+
+    function stopMetrics() {
+      if (metricsTimer) { clearInterval(metricsTimer); metricsTimer = null; }
+    }
+
+    // ── Metrics update ────────────────────────────────────────────────────────────
+    async function fetchMetrics(endpoint) {
+      try {
+        const r = await fetch(endpoint);
+        if (!r.ok) return;
+        const d = await r.json();
+        updateUI(d);
+      } catch (_) { }
+    }
+
+    function updateUI(d) {
+      const status = d.risk_level || d.status || 'SAFE';
+      const persons = d.person_count ?? d.persons ?? 0;
+      const density = d.density_m2 ?? 0;
+      const score = Math.min(d.risk_score ?? 0, 100);
+      const usingP2P = d.using_p2pnet ?? false;
+      const alert = d.alert_msg || '';
+      const frameNo = d.frame_no;
+      const totalF = d.total_frames;
+      const grid = d.density_grid;
+      const peak = d.peak_count ?? persons;
+      const total = d.total_persons_detected ?? persons;
+
+      const cfg = rc(status);
+
+      // Risk card
+      document.getElementById('risk-icon').textContent = cfg.icon;
+      const rl = document.getElementById('risk-label');
+      rl.textContent = status;
+      rl.style.background = cfg.bg;
+      rl.style.color = cfg.color;
+      document.getElementById('risk-card').style.borderColor = cfg.color.replace(')', ',0.4)').replace('rgb', 'rgba');
+
+      document.getElementById('persons-val').textContent = persons;
+      document.getElementById('persons-val').style.color = cfg.color;
+      document.getElementById('density-val').textContent = Number(density).toFixed(2);
+      document.getElementById('density-val').style.color = cfg.color;
+      // Update peak and total counters
+      document.getElementById('peak-val').textContent = peak;
+      document.getElementById('total-val').textContent = total;
+      document.getElementById('score-label').textContent = score.toFixed(1) + '/100';
+      const sf = document.getElementById('score-fill');
+      sf.style.width = score + '%';
+      sf.style.background = score >= 80 ? '#c0392b' : score >= 55 ? '#e74c3c' : score >= 30 ? '#f39c12' : '#27ae60';
+
+      // Alert
+      const ab = document.getElementById('alert-box');
+      if (alert && status !== 'SAFE') {
+        ab.style.display = 'block';
+        ab.style.background = cfg.bg;
+        ab.style.border = '1px solid ' + cfg.color;
+        ab.style.color = cfg.color;
+        ab.textContent = cfg.icon + ' ' + alert;
+      } else { ab.style.display = 'none'; }
+
+      // P2PNet badge
+      const p2b = document.getElementById('p2pnet-badge');
+      const p2h = document.getElementById('engine-badge');
+      p2b.style.display = usingP2P ? 'block' : 'none';
+      p2h.style.display = usingP2P ? 'inline-block' : 'none';
+
+      // Frame badge
+      if (frameNo !== undefined) {
+        document.getElementById('frame-badge').textContent =
+          `Frame ${frameNo}${totalF ? ' / ' + totalF : ''}`;
+      }
+
+      // Density grid
+      if (grid && Array.isArray(grid)) renderGrid(grid);
+
+      // Log
+      logHistory.unshift({ time: new Date().toLocaleTimeString('en-IN', { hour12: false }), status, persons, density });
+      if (logHistory.length > 30) logHistory.pop();
+      renderLog();
+    }
+
+    function renderGrid(grid) {
+      const el = document.getElementById('density-grid');
+      const cols = grid[0]?.length || 6;
+      el.style.gridTemplateColumns = `repeat(${cols},1fr)`;
+      const cells = grid.flat();
+      const maxV = Math.max(...cells, 0.01);
+
+      el.innerHTML = cells.map((v, i) => {
+        const r = i / cells.length; // unused — use absolute thresholds
+        const bg = v >= 4 ? '#c0392b' : v >= 2 ? '#e74c3c' : v >= 1 ? '#f39c12' : v > 0.05 ? '#27ae60' : 'rgba(255,255,255,0.04)';
+        const label = v >= 0.5 ? Number(v).toFixed(1) : '';
+        return `<div class="density-cell" style="background:${bg}" title="${Number(v).toFixed(2)} p/m²">${label}</div>`;
+      }).join('');
+    }
+
+    function renderLog() {
+      const el = document.getElementById('log-list');
+      if (!logHistory.length) return;
+      el.innerHTML = logHistory.slice(0, 20).map((h, i) => {
+        const cfg = rc(h.status);
+        return `<div class="log-item" style="${i === 0 ? 'background:' + cfg.bg + ';border:1px solid ' + cfg.color.replace(')', ',0.25)') + '' : ''}">
+      <span class="log-time">${h.time}</span>
+      <span style="flex:1;color:${cfg.color};font-weight:${i === 0 ? 700 : 400}">${cfg.icon} ${h.status}</span>
+      <span style="color:#5a5f72">${h.persons}p</span>
+      <span style="color:${cfg.color};font-weight:600">${Number(h.density).toFixed(2)}</span>
+    </div>`;
+      }).join('');
+    }
+
+    function resetMetrics() {
+      document.getElementById('risk-icon').textContent = '⏳';
+      document.getElementById('risk-label').textContent = 'No Source';
+      document.getElementById('persons-val').textContent = '—';
+      document.getElementById('density-val').textContent = '—';
+      document.getElementById('peak-val').textContent = '—';
+      document.getElementById('total-val').textContent = '—';
+      document.getElementById('score-fill').style.width = '0';
+      document.getElementById('alert-box').style.display = 'none';
+      document.getElementById('density-grid').innerHTML = '';
+    }
+
+    // Auto-start on page load if camera is available
+    window.addEventListener('load', () => {
+      if (checkAuth()) {
+        const select = document.getElementById('cam-select');
+        if (select && select.options.length > 0) switchCamera();
+      }
+    });
+  </script>
 </body>
+
 </html>

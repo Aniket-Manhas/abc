@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { colors, spacing, radius } from '../theme';
+import useTheme from '../useTheme';
 
 const FIELDS = [
   { key: 'name',     label: 'Full Name',        placeholder: 'Rahul Sharma',    type: 'default',       required: true },
@@ -16,6 +17,7 @@ const FIELDS = [
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
+  const { colors, fs } = useTheme();
   const [form, setForm]     = useState({ name:'', email:'', phone:'', password:'', confirm:'' });
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +36,8 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       await register({ name: form.name, email: form.email.trim(), phone: form.phone, password: form.password });
+      Alert.alert('Success', 'Registration successful! An OTP has been sent to your email.');
+      navigation.navigate('Login');
     } catch (err) {
       Alert.alert('Registration failed', err.response?.data?.message || 'Please try again.');
     } finally {

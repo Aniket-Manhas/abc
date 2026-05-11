@@ -15,6 +15,7 @@ export default function AdminNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [form, setForm] = useState({ title: '', message: '', type: 'info', targetRole: 'all', expiresIn: '' });
   const [sending, setSending] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,55 @@ export default function AdminNotifications() {
       await notificationsAPI.deactivate(id);
       setNotifications(prev => prev.filter(n => n._id !== id));
     } catch (_) {}
+  };
+
+  const handleAutoGenerate = async () => {
+    if (!form.title) {
+      setError('Please enter a title first to generate a message.');
+      return;
+    }
+    setGenerating(true);
+    setError('');
+    setSuccess('');
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        setError('Gemini API key is missing from environment variables.');
+        setGenerating(false);
+        return;
+      }
+      
+      const prompt = `Write a short, professional, and clear public announcement message (under 3 sentences) for a railway station notification with the title: "${form.title}". Notification type: ${form.type}. Target Audience: ${form.targetRole}. Do not include quotes or conversational filler, just the message itself.`;
+      
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      
+      if (res.status === 429) {
+        throw new Error('Gemini API quota exceeded (429 Too Many Requests). Please wait a moment and try again.');
+      }
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `API Error: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      if (data.candidates && data.candidates.length > 0) {
+        setForm(p => ({ ...p, message: data.candidates[0].content.parts[0].text.trim() }));
+      } else {
+        throw new Error('Invalid response from AI');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to generate message using AI');
+      console.error(err);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const selectedType = NOTIF_TYPES.find(t => t.id === form.type);
@@ -97,8 +147,17 @@ export default function AdminNotifications() {
             </div>
 
             <div className="input-group">
-              <label className="label">Message *</label>
-              <textarea name="message" className="input" placeholder="Enter your announcement…" value={form.message} onChange={handleChange} rows={3} style={{ resize: 'vertical' }} required />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label className="label" style={{ marginBottom: 0 }}>Message *</label>
+                <button type="button" onClick={handleAutoGenerate} disabled={generating || !form.title} style={{
+                  background: 'none', border: '1px solid var(--accent-saffron)', color: 'var(--accent-saffron)',
+                  borderRadius: 6, padding: '0.2rem 0.6rem', fontSize: '0.75rem', cursor: generating || !form.title ? 'not-allowed' : 'pointer',
+                  opacity: generating || !form.title ? 0.5 : 1
+                }}>
+                  {generating ? '⏳ Generating...' : '✨ Auto-Generate AI Message'}
+                </button>
+              </div>
+              <textarea name="message" className="input" placeholder="Enter your announcement or generate one..." value={form.message} onChange={handleChange} rows={3} style={{ resize: 'vertical' }} required />
             </div>
 
             <div className="input-group">

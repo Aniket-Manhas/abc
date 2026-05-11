@@ -3,18 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLogin() {
+  const [isSignup, setIsSignup] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('admin@sahyatri.com');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const user = await login(email, password);
+      let user;
+      if (isSignup) {
+        if (!name) throw new Error('Name is required');
+        user = await register({ name, email, password, role: 'admin' });
+      } else {
+        user = await login(email, password);
+      }
+      
       if (user.role !== 'admin') {
         setError('This account does not have admin privileges.');
         setLoading(false);
@@ -22,7 +31,11 @@ export default function AdminLogin() {
       }
       navigate('/admin/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed.');
+      if (err.response?.status === 403 && err.response?.data?.unverified) {
+        setError('Email not verified. Please check your email for an OTP. OTP verification is currently only supported on the mobile app, or contact a super-admin.');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Authentication failed.');
+      }
     } finally { setLoading(false); }
   };
 
@@ -40,6 +53,13 @@ export default function AdminLogin() {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {isSignup && (
+            <div className="input-group">
+              <label className="label" htmlFor="admin-name">Full Name</label>
+              <input id="admin-name" className="input" type="text" placeholder="Your Name" value={name}
+                onChange={e => setName(e.target.value)} required />
+            </div>
+          )}
           <div className="input-group">
             <label className="label" htmlFor="admin-email">Admin Email</label>
             <input id="admin-email" className="input" type="email" value={email}
@@ -54,9 +74,15 @@ export default function AdminLogin() {
             <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '0.625rem 0.875rem', fontSize: '0.85rem', color: 'var(--crowd-high)' }}>{error}</div>
           )}
           <button className="btn btn-primary" type="submit" disabled={loading} id="admin-login-btn" style={{ marginTop: '0.5rem' }}>
-            {loading ? '⏳ Authenticating…' : '🔐 Sign In as Admin'}
+            {loading ? '⏳ Authenticating…' : (isSignup ? '✨ Create Admin Account' : '🔐 Sign In as Admin')}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.85rem' }}>
+          <button type="button" onClick={() => setIsSignup(!isSignup)} style={{ background: 'none', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer', fontWeight: 600 }}>
+            {isSignup ? 'Already have an account? Sign In' : 'Need an admin account? Sign Up'}
+          </button>
+        </div>
 
         <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           Default: <code style={{ color: 'var(--accent-cyan)' }}>admin@sahyatri.com</code> / <code style={{ color: 'var(--accent-cyan)' }}>Admin@123</code>

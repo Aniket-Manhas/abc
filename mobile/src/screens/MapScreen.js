@@ -295,22 +295,15 @@ const LEAFLET_HTML = `
 
 export default function MapScreen() {
   const { crowdData } = useSocket();
-  const [mode, setMode] = useState('outdoor');
-  const [geojson, setGeojson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const webviewRef = useRef(null);
 
   useEffect(() => {
-    indoorNavAPI.getGeoJson()
-      .then(r => setGeojson(r.data))
-      .catch(err => console.warn('[Map] Indoor GeoJSON load failed:', err?.message || err))
-      .finally(() => setLoading(false));
+    // Just simulating some initial load delay if needed, though WebView handles itself
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (mode === 'outdoor') setMapReady(false);
-  }, [mode]);
 
   const handleWebViewMessage = async (event) => {
     try {
@@ -345,61 +338,28 @@ export default function MapScreen() {
     <View style={styles.screen}>
 
       {/* ── Outdoor map ── */}
-      {mode === 'outdoor' && (
-        <View style={StyleSheet.absoluteFill}>
-          {!mapReady && (
-            <View style={styles.loadingOverlay} pointerEvents="none">
-              <ActivityIndicator size="large" color={colors.accentSaffron} />
-              <Text style={styles.loadingText}>Loading map…</Text>
-            </View>
-          )}
-          <WebView
-            ref={webviewRef}
-            style={StyleSheet.absoluteFill}
-            originWhitelist={['*']}
-            source={{ html: LEAFLET_HTML }}
-            javaScriptEnabled
-            domStorageEnabled
-            geolocationEnabled
-            onMessage={handleWebViewMessage}
-            onError={(e) => console.warn('[Map WebView Error]', e.nativeEvent)}
-            mixedContentMode="always"
-            allowsInlineMediaPlayback
-            scrollEnabled={false}
-            bounces={false}
-          />
-        </View>
-      )}
-
-      {/* ── Indoor SVG map ── */}
-      {mode === 'indoor' && (
-        loading ? (
-          <View style={styles.center}>
+      <View style={StyleSheet.absoluteFill}>
+        {!mapReady && (
+          <View style={styles.loadingOverlay} pointerEvents="none">
             <ActivityIndicator size="large" color={colors.accentSaffron} />
-            <Text style={styles.loadingText}>Loading station map…</Text>
+            <Text style={styles.loadingText}>Loading map…</Text>
           </View>
-        ) : (
-          <IndoorMap
-            geojson={geojson}
-            userLngLat={[STATION_LNG, STATION_LAT]}
-          />
-        )
-      )}
-
-      {/* ── Mode toggle ── */}
-      <View style={styles.toggleBar}>
-        <TouchableOpacity
-          style={[styles.toggleBtn, mode === 'outdoor' && styles.toggleBtnActive]}
-          onPress={() => setMode('outdoor')}
-        >
-          <Text style={[styles.toggleText, mode === 'outdoor' && styles.toggleTextActive]}>🌍 Outdoor</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleBtn, mode === 'indoor' && styles.toggleBtnActive]}
-          onPress={() => setMode('indoor')}
-        >
-          <Text style={[styles.toggleText, mode === 'indoor' && styles.toggleTextActive]}>🏢 Indoor</Text>
-        </TouchableOpacity>
+        )}
+        <WebView
+          ref={webviewRef}
+          style={StyleSheet.absoluteFill}
+          originWhitelist={['*']}
+          source={{ html: LEAFLET_HTML }}
+          javaScriptEnabled
+          domStorageEnabled
+          geolocationEnabled
+          onMessage={handleWebViewMessage}
+          onError={(e) => console.warn('[Map WebView Error]', e.nativeEvent)}
+          mixedContentMode="always"
+          allowsInlineMediaPlayback
+          scrollEnabled={false}
+          bounces={false}
+        />
       </View>
 
     </View>
@@ -410,19 +370,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bgPrimary },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm },
 
-  toggleBar: {
-    position: 'absolute', top: 45, right: 16, zIndex: 30,
-    flexDirection: 'row', gap: 6,
-    backgroundColor: 'rgba(26,26,29,0.92)',
-    borderRadius: radius.lg,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: colors.borderBright,
-  },
-  toggleBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md },
-  toggleBtnActive: { backgroundColor: colors.accentSaffron },
-  toggleText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
-  toggleTextActive: { color: colors.bgPrimary },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm },
 
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

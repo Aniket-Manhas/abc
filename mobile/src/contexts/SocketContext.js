@@ -76,7 +76,7 @@ export const SocketProvider = ({ children }) => {
   return (
     <SocketContext.Provider value={{
       connected, crowdData, notifications, adminAlerts,
-      dismissNotification, emitLocation, reportCrowdDensity, setAdminAlerts,
+      dismissNotification, emitLocation, reportCrowdDensity, setAdminAlerts, setNotifications,
     }}>
       {children}
     </SocketContext.Provider>

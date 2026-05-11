@@ -43,14 +43,20 @@ export const AuthProvider = ({ children }) => {
     return userData;
   }, []);
 
-  const register = useCallback(async (formData) => {
-    const res = await authAPI.register(formData);
+  const verifyOtp = useCallback(async (email, otp) => {
+    const res = await authAPI.verifyOtp({ email, otp });
     const { token: newToken, ...userData } = res.data;
     await storage.setItem('sahyatri_token', newToken);
     setToken(newToken);
     setUser(userData);
     connectSocket(newToken);
     return userData;
+  }, []);
+
+  const register = useCallback(async (formData) => {
+    const res = await authAPI.register(formData);
+    // User needs to verify email before logging in
+    return res.data;
   }, []);
 
   const logout = useCallback(async () => {
@@ -69,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, token, loading,
-      login, register, logout, updatePreferences,
+      login, register, logout, verifyOtp, updatePreferences,
       isAdmin: user?.role === 'admin',
     }}>
       {children}

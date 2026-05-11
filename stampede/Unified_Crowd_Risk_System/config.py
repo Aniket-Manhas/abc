@@ -1,78 +1,105 @@
 # =============================================================================
-# config.py — All tunable parameters for the Crowd Risk Detection System
+# config.py — Tunable parameters for the AI Crowd Density Monitoring System
 # =============================================================================
+import os
+from dotenv import load_dotenv
+
+# Load .env variables if present
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_THIS_DIR, '.env'))
+
+# ── Email Settings ────────────────────────────────────────────────────────────
+ENABLE_EMAIL_ALERTS = os.environ.get("ENABLE_EMAIL_ALERTS", "False").lower() == "true"
+MAIL_SERVER         = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT           = int(os.environ.get("MAIL_PORT", 587))
+MAIL_USERNAME       = os.environ.get("MAIL_USERNAME", "")
+MAIL_PASSWORD       = os.environ.get("MAIL_PASSWORD", "")
+ADMIN_ALERT_EMAIL   = os.environ.get("ADMIN_ALERT_EMAIL", "")
 
 # ── Grid Settings ─────────────────────────────────────────────────────────────
-GRID_ROWS = 6          # Number of rows to divide the frame into
-GRID_COLS = 6          # Number of columns to divide the frame into
+GRID_ROWS = 6
+GRID_COLS = 6
 
-# ── YOLO Detection ────────────────────────────────────────────────────────────
-YOLO_MODEL_PATH = "yolov8s.pt"   # Path to YOLOv8 weights
-YOLO_CONF       = 0.35           # Minimum confidence for detections (0–1)
-YOLO_IMG_SIZE   = 640            # Higher size for better accuracy
+# ── YOLO Detection (sparse/medium crowds) ─────────────────────────────────────
+YOLO_MODEL_PATH = "yolov8s.pt"
+YOLO_CONF       = 0.20          # Lower threshold → catches more partially occluded people
+YOLO_IMG_SIZE   = 960           # Higher resolution → better detection of small/distant persons
+
+# ── P2PNet Settings (dense crowd counting) ───────────────────────────────────
+P2PNET_DIR      = os.path.abspath(os.path.join(_THIS_DIR, '..', '..', '..', 'CrowdCounting-P2PNet'))
+P2PNET_WEIGHTS  = os.path.join(P2PNET_DIR, 'weights', 'SHTechA.pth')
+P2PNET_ENABLED  = True
+P2PNET_THRESHOLD = 0.35       # Lower → more head points detected in dense crowds
+P2PNET_INTERVAL  = 8          # Run P2PNet every N frames even if below dense threshold
+DENSE_THRESHOLD  = 6          # Switch to P2PNet when YOLO sees >= 6 persons (was 12)
+
+# ── Zone Area Calibration ─────────────────────────────────────────────────────
+# Estimated real-world area visible in the camera frame (square meters).
+# Tune per camera using: area = (frame_width_m * frame_height_m) from site survey.
+ZONE_AREA_M2    = 50.0        # Total monitored area in m² (default: 50 m² FOV)
+
+# Derived: area per grid cell
+def cell_area_m2():
+    return ZONE_AREA_M2 / (GRID_ROWS * GRID_COLS)
+
+# ── Risk Density Thresholds (persons per m²) ──────────────────────────────────
+# Based on Fruin's Level of Service model for pedestrian density:
+DENSITY_SAFE      = 1.0   # < 1.0 p/m²  → SAFE       (free movement)
+DENSITY_WARNING   = 2.0   # 1.0–2.0     → WARNING     (restricted movement)
+DENSITY_HIGH_RISK = 4.0   # 2.0–4.0     → HIGH RISK   (dangerous compression)
+DENSITY_DANGER    = 6.0   # ≥ 4.0       → DANGER      (crush risk / stampede)
+
+# ---Risk alram testing of device make sure to cooment these and uncomment the normal risk thresholds---
+# DENSITY_SAFE = 0.01
+# DENSITY_WARNING = 0.02
+# DENSITY_HIGH_RISK = 0.03
+# DENSITY_DANGER = 0.04
 
 # ── Performance / Lag Reduction ───────────────────────────────────────────────
-PROCESS_WIDTH   = 1024  # Higher resolution for better detection
-                        # (maintains aspect ratio; reduces YOLO + flow cost)
-CAPTURE_BUFFER  = 1     # cv2.CAP_PROP_BUFFERSIZE — 1 = always get latest frame
-DRAIN_FRAMES    = 4     # Stale frames to skip per update cycle (kills buffer lag)
+PROCESS_WIDTH   = 1280          # Wider processing → less person-shrinkage at scale-down
+CAPTURE_BUFFER  = 1
 
-# ── Risk Scoring Weights (must sum to 1.0) ────────────────────────────────────
-DENSITY_WEIGHT  = 0.60   # Density is the PRIMARY stampede indicator
-MOTION_WEIGHT   = 0.25   # Speed variance — secondary
-DISORDER_WEIGHT = 0.15   # Directional chaos — secondary
-
-# ── Risk Thresholds (normalised 0–1 score) ────────────────────────────────────
-RISK_MEDIUM_THRESHOLD = 0.42   # Score above this → MEDIUM RISK  (was 0.35)
-RISK_HIGH_THRESHOLD   = 0.72   # Score above this → HIGH RISK    (was 0.65)
-
-# ── Stampede Requires a Crowd — Minimum Person Counts ─────────────────────────
-# Even if scores are high, don't escalate without enough people in frame.
-MIN_CROWD_FOR_MEDIUM = 3    # Need at least 3 detected people for MEDIUM RISK
-MIN_CROWD_FOR_HIGH   = 8    # Need at least 8 detected people for HIGH RISK
-
-# ── Density Gate for Motion/Disorder ─────────────────────────────────────────
-# Motion and disorder only contribute to risk when density is also elevated.
-# Below this normalised density, motion & disorder are suppressed.
-# (prevents 1 person walking from triggering risk)
-DENSITY_MIN_FOR_MOTION = 0.25   # ≈ 2–3 people per cell (with MAX=10)
+# ── Risk Scoring Weights ──────────────────────────────────────────────────────
+DENSITY_WEIGHT  = 0.60
+MOTION_WEIGHT   = 0.25
+DISORDER_WEIGHT = 0.15
 
 # ── Temporal Smoothing ────────────────────────────────────────────────────────
-# Risk score is averaged over the last N frames before thresholding.
-# Prevents momentary spikes from causing false alerts.
-RISK_SMOOTH_FRAMES  = 10    # Smooth over last 10 processed frames (~3–5 seconds)
+RISK_SMOOTH_FRAMES     = 10
+DENSITY_MIN_FOR_MOTION = 0.25
 
-# ── False-Alarm Suppression (Train Boarding) ──────────────────────────────────
-DISORDER_THRESHOLD = 0.30   # Below this → considered structured flow
-
-# ── Density Normalisation ─────────────────────────────────────────────────────
-MAX_PEOPLE_PER_CELL = 8     # A cell with this many people = density score 1.0
-                            # (was 10; lowered so 8 people = fully dense)
+# ── Density Normalisation (for heatmap, not risk thresholds) ─────────────────
+MAX_PEOPLE_PER_CELL = 8
 
 # ── Optical Flow ──────────────────────────────────────────────────────────────
 FLOW_PYR_SCALE  = 0.5
 FLOW_LEVELS     = 3
-FLOW_WINSIZE    = 11    # Smaller window = faster (was 15)
-FLOW_ITERATIONS = 2     # Fewer iterations = faster (was 3)
+FLOW_WINSIZE    = 11
+FLOW_ITERATIONS = 2
 FLOW_POLY_N     = 5
 FLOW_POLY_SIGMA = 1.1
 FLOW_FLAGS      = 0
-
 FLOW_SCALE      = 15
-FLOW_MIN_MAG    = 0.8   # Raise noise floor (was 0.5) — ignore tiny motions
+FLOW_MIN_MAG    = 0.8
 
 # ── Visualiser ────────────────────────────────────────────────────────────────
-HEATMAP_ALPHA   = 0.40
+HEATMAP_ALPHA   = 0.38
 DRAW_BBOXES     = False
 DRAW_FLOW       = False
-DRAW_HEATMAP    = True
+DRAW_HEATMAP    = False        # No colour fill on cells — raw video only
 DRAW_GRID_LINES = True
+DRAW_P2PNET_POINTS = True
 
 # ── Colour map (BGR) ──────────────────────────────────────────────────────────
-COLOR_NORMAL      = (50,  205,  50)
-COLOR_MEDIUM      = (0,   200, 255)
-COLOR_HIGH        = (0,    50, 220)
-COLOR_CRITICAL    = (0,     0, 180)
+COLOR_SAFE        = (50,  205,  50)    # Green
+COLOR_WARNING     = (0,   200, 255)    # Yellow-ish
+COLOR_HIGH        = (0,   100, 255)    # Orange
+COLOR_DANGER      = (0,     0, 220)    # Red
 COLOR_ARROW       = (255, 255, 255)
 COLOR_HUD_BG      = (20,   20,  20)
 COLOR_HUD_TEXT    = (220, 220, 220)
+
+# Legacy aliases for compatibility
+COLOR_NORMAL   = COLOR_SAFE
+COLOR_MEDIUM   = COLOR_WARNING
+COLOR_CRITICAL = COLOR_DANGER

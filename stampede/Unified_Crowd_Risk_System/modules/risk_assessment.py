@@ -1,13 +1,8 @@
 # =============================================================================
 # modules/risk_assessment.py
-# Per-cell and global risk scoring — stampede-appropriate logic
-#
-# Key design principles:
-#   1. Density is the PRIMARY indicator — no stampede without a crowd.
-#   2. Motion & disorder are GATED by local density — one person walking
-#      fast does NOT trigger risk.
-#   3. Global person count gates the maximum achievable risk level.
-#   4. Temporal smoothing prevents momentary spikes from false-alerting.
+# 4-level crowd risk assessment based on physical crowd density (persons/m²).
+# Levels: SAFE → WARNING → HIGH RISK → DANGER
+# Also uses optical flow for dynamic risk factors (growth rate, stagnation).
 # =============================================================================
 
 import collections
@@ -15,147 +10,153 @@ import numpy as np
 import config
 
 # ── Risk level constants ──────────────────────────────────────────────────────
-NORMAL      = "NORMAL"
-MEDIUM_RISK = "MEDIUM RISK"
-HIGH_RISK   = "HIGH RISK"
+SAFE      = "SAFE"
+WARNING   = "WARNING"
+HIGH_RISK = "HIGH RISK"
+DANGER    = "DANGER"
 
 RISK_COLORS = {
-    NORMAL:      config.COLOR_NORMAL,
-    MEDIUM_RISK: config.COLOR_MEDIUM,
-    HIGH_RISK:   config.COLOR_HIGH,
+    SAFE:      config.COLOR_SAFE,
+    WARNING:   config.COLOR_WARNING,
+    HIGH_RISK: config.COLOR_HIGH,
+    DANGER:    config.COLOR_DANGER,
 }
 
 RISK_ALERTS = {
-    NORMAL:      "Situation normal. No immediate action required.",
-    MEDIUM_RISK: "Elevated crowd density detected. Monitor the area closely.",
-    HIGH_RISK:   "STAMPEDE RISK! Chaotic crowd movement in high-density area. Take action NOW!",
+    SAFE:
+        "Situation normal. Crowd density within safe limits.",
+    WARNING:
+        "Elevated crowd density detected. Monitor area closely. Station staff on standby.",
+    HIGH_RISK:
+        "HIGH RISK: Crowd density exceeding safe thresholds. Initiate crowd management protocols immediately.",
+    DANGER:
+        "⚠️ DANGER: Critical crowd density! Immediate intervention required — risk of crowd crush!",
 }
+
+# Numeric scores for comparison
+_LEVEL_ORDER = {SAFE: 0, WARNING: 1, HIGH_RISK: 2, DANGER: 3}
 
 
 class RiskAssessor:
     """
-    Combines density + optical-flow into per-cell and global risk.
+    Combines density (persons/m²) + optical flow into per-cell and global risk.
 
-    The score formula uses density gating so that high motion/disorder
-    values from a single person do NOT push the score above NORMAL.
+    Density thresholds (from config):
+        < DENSITY_SAFE      → SAFE
+        < DENSITY_WARNING   → WARNING
+        < DENSITY_HIGH_RISK → HIGH RISK
+        ≥ DENSITY_HIGH_RISK → DANGER
 
-        per-cell score = density_contribution
-                       + motion_contribution  * density_gate
-                       + disorder_contribution * density_gate
-
-    where density_gate ramps 0→1 as density rises from 0 → DENSITY_MIN_FOR_MOTION.
-
-    The global score is then temporally smoothed over RISK_SMOOTH_FRAMES
-    before classification, preventing single-frame spikes.
+    Dynamic amplifiers applied to global score:
+        • Rapid crowd growth (surge detection)
+        • Stagnation (high density + low motion = crush pressure building)
     """
 
     def __init__(self):
-        # Circular buffer for temporal smoothing of the global risk score
-        self._score_buf = collections.deque(maxlen=config.RISK_SMOOTH_FRAMES)
+        self._score_buf          = collections.deque(maxlen=config.RISK_SMOOTH_FRAMES)
+        self._prev_global_count  = 0
+        self._stagnation_frames  = 0
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def assess(self, norm_density, flow_grid, global_person_count=0):
+    def assess(self, density_map_m2, norm_density, flow_grid,
+               global_count=0, global_density_m2=0.0):
         """
         Parameters
         ----------
-        norm_density        : np.ndarray (rows, cols) values 0.0–1.0
-        flow_grid           : list[list[dict]]  — from OpticalFlowAnalyzer
-        global_person_count : int — total people detected in the frame
+        density_map_m2    : np.ndarray (rows, cols) — persons/m² per cell
+        norm_density      : np.ndarray (rows, cols) — normalized 0–1 count
+        flow_grid         : list[list[dict]]  — from OpticalFlowAnalyzer (may be [])
+        global_count      : int   — total persons detected
+        global_density_m2 : float — total persons / total zone area
 
         Returns
         -------
-        risk_map    : list[list[dict]]  keys: level, score, color
-        global_risk : str
-        alert_msg   : str
+        risk_map     : list[list[dict]]  keys: level, density_m2, color
+        global_risk  : str  — SAFE / WARNING / HIGH RISK / DANGER
+        alert_msg    : str
+        risk_score   : float 0–100
         """
-        rows = len(flow_grid)
-        cols = len(flow_grid[0]) if rows > 0 else 0
-
+        rows = config.GRID_ROWS
+        cols = config.GRID_COLS
         risk_map     = []
-        instant_max  = 0.0   # worst per-cell score this frame (un-smoothed)
 
         for r in range(rows):
             row_risk = []
             for c in range(cols):
-                cell          = flow_grid[r][c]
-                density_score = float(norm_density[r][c])
-                motion_var    = cell["variance"]
-                disorder      = cell["disorder"]
+                d_m2 = float(density_map_m2[r][c]) if density_map_m2 is not None else 0.0
 
-                # ── Density contribution (always present) ─────────────────────
-                density_contribution = config.DENSITY_WEIGHT * density_score
+                # Flow-based disorder modifier per cell
+                disorder_boost = 0.0
+                if flow_grid and r < len(flow_grid) and c < len(flow_grid[r]):
+                    cell       = flow_grid[r][c]
+                    d_norm     = float(norm_density[r][c]) if norm_density is not None else 0.0
+                    d_gate     = min(d_norm / max(config.DENSITY_MIN_FOR_MOTION, 1e-5), 1.0)
+                    # Disorder adds at most +0.5 p/m² equivalent at full gate
+                    disorder_boost = cell['disorder'] * d_gate * 0.5
 
-                # ── Density gate ──────────────────────────────────────────────
-                # Ramps 0→1 as density goes from 0 → DENSITY_MIN_FOR_MOTION.
-                # Below the gate, motion and disorder add ~0 to the score.
-                density_gate = min(
-                    density_score / max(config.DENSITY_MIN_FOR_MOTION, 1e-5),
-                    1.0
-                )
-
-                # ── Motion & disorder contributions (gated) ───────────────────
-                motion_contribution   = config.MOTION_WEIGHT   * motion_var  * density_gate
-                disorder_contribution = config.DISORDER_WEIGHT * disorder    * density_gate
-
-                # ── Raw cell score ────────────────────────────────────────────
-                score = density_contribution + motion_contribution + disorder_contribution
-
-                # ── False-alarm suppression for structured boarding flow ───────
-                if disorder < config.DISORDER_THRESHOLD and self._is_bidirectional(cell):
-                    score = config.DENSITY_WEIGHT * density_score * 0.5
-
-                # ── Minimum-crowd ceiling ─────────────────────────────────────
-                # A single occupied cell cannot escalate above NORMAL unless
-                # there are enough people globally to constitute a crowd risk.
-                score = self._apply_crowd_ceiling(score, global_person_count)
-
-                score = round(float(np.clip(score, 0.0, 1.0)), 3)
-                instant_max = max(instant_max, score)
-
-                level = self._classify(score)
+                level = self._classify_m2(d_m2 + disorder_boost)
                 row_risk.append({
-                    "level": level,
-                    "score": score,
-                    "color": RISK_COLORS[level],
+                    'level':      level,
+                    'density_m2': round(d_m2, 2),
+                    'color':      RISK_COLORS[level],
+                    'score':      round(min(d_m2 / max(config.DENSITY_HIGH_RISK, 1e-5), 1.0), 3),
                 })
             risk_map.append(row_risk)
 
-        # ── Temporal smoothing of global score ────────────────────────────────
-        self._score_buf.append(instant_max)
-        smoothed_score = float(np.mean(self._score_buf))
+        # ── Global risk score (0–100) ─────────────────────────────────────────
+        base = min((global_density_m2 / max(config.DENSITY_DANGER, 1e-5)) * 100.0, 100.0)
 
-        if global_person_count > 3:
-            global_risk = HIGH_RISK
-            alert_msg   = f"ALERT: Crowd Threshold Exceeded! ({global_person_count} people detected)"
+        # Growth-rate boost (sudden surge)
+        growth = max(global_count - self._prev_global_count, 0)
+        growth_boost = min(growth * 2.0, 20.0)
+        self._prev_global_count = global_count
+
+        # Stagnation boost
+        avg_mag = 0.0
+        if flow_grid:
+            all_mags = [
+                flow_grid[r][c]['mean_magnitude']
+                for r in range(min(len(flow_grid), rows))
+                for c in range(min(len(flow_grid[r]), cols))
+            ]
+            avg_mag = float(np.mean(all_mags)) if all_mags else 0.0
+
+        if global_density_m2 > config.DENSITY_WARNING and avg_mag < 0.5:
+            self._stagnation_frames += 1
         else:
-            global_risk = self._classify(smoothed_score)
-            alert_msg   = RISK_ALERTS[global_risk]
-            
-        return risk_map, global_risk, alert_msg
+            self._stagnation_frames = max(0, self._stagnation_frames - 1)
+        stagnation_boost = min(self._stagnation_frames * 0.5, 15.0)
+
+        raw_score = base + growth_boost + stagnation_boost
+        self._score_buf.append(raw_score)
+        risk_score = round(float(np.mean(self._score_buf)), 1)
+        risk_score = min(risk_score, 100.0)
+
+        # Global risk level from density + boosted score
+        global_risk = self._classify_m2(global_density_m2)
+        # If score is very high, escalate at least to HIGH RISK
+        if risk_score >= 70 and _LEVEL_ORDER[global_risk] < _LEVEL_ORDER[HIGH_RISK]:
+            global_risk = HIGH_RISK
+        if risk_score >= 90 and _LEVEL_ORDER[global_risk] < _LEVEL_ORDER[DANGER]:
+            global_risk = DANGER
+
+        alert_msg = RISK_ALERTS[global_risk]
+        if global_risk == DANGER:
+            alert_msg = f"⚠️ DANGER: {global_count} persons detected @ {global_density_m2:.2f} p/m². IMMEDIATE ACTION REQUIRED!"
+        elif global_risk == HIGH_RISK:
+            alert_msg = f"HIGH RISK: {global_count} persons @ {global_density_m2:.2f} p/m². Initiate crowd control now."
+
+        return risk_map, global_risk, alert_msg, risk_score
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
-    def _apply_crowd_ceiling(self, score, global_person_count):
-        """
-        Cap the achievable score based on how many people are in the frame.
-        Prevents a 1-2 person scene from ever reaching HIGH or MEDIUM RISK.
-        """
-        if global_person_count < config.MIN_CROWD_FOR_MEDIUM:
-            # Fewer people than medium threshold → cap below MEDIUM
-            return min(score, config.RISK_MEDIUM_THRESHOLD - 0.01)
-        if global_person_count < config.MIN_CROWD_FOR_HIGH:
-            # Fewer people than high threshold → cap below HIGH
-            return min(score, config.RISK_HIGH_THRESHOLD - 0.01)
-        return score
-
-    def _classify(self, score):
-        if score >= config.RISK_HIGH_THRESHOLD:
+    def _classify_m2(self, density_m2):
+        """Map density (p/m²) to risk level using Fruin LOS thresholds."""
+        if density_m2 >= config.DENSITY_DANGER:
+            return DANGER
+        if density_m2 >= config.DENSITY_HIGH_RISK:
             return HIGH_RISK
-        elif score >= config.RISK_MEDIUM_THRESHOLD:
-            return MEDIUM_RISK
-        return NORMAL
-
-    def _is_bidirectional(self, cell):
-        """Structured boarding/deboarding: low disorder + meaningful magnitude."""
-        return cell["mean_magnitude"] > config.FLOW_MIN_MAG
+        if density_m2 >= config.DENSITY_SAFE:
+            return WARNING
+        return SAFE

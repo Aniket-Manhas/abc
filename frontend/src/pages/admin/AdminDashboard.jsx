@@ -9,18 +9,10 @@ export default function AdminDashboard() {
   const { t } = useTranslation();
   const { crowdData, connected, adminAlerts } = useSocket();
   const navigate = useNavigate();
-  const [usageStats, setUsageStats] = useState(null);
-  const [crowdSummary, setCrowdSummary] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    Promise.all([analyticsAPI_req.getUsageStats(), analyticsAPI_req.getCrowdSummary()])
-      .then(([stats, summary]) => {
-        setUsageStats(stats.data);
-        setCrowdSummary(summary.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    // Analytics removed as it is currently mocked/undeveloped
   }, []);
 
   const crowdCounts = Object.values(crowdData).reduce(
@@ -36,8 +28,6 @@ export default function AdminDashboard() {
   const stats = [
     { icon: '🔴', label: t('high_density'), value: crowdCounts.high, color: 'var(--crowd-high)', bg: 'rgba(239,68,68,0.1)', to: '/admin/crowd' },
     { icon: '🚨', label: t('active_alerts'), value: activeAlerts, color: '#f97316', bg: 'rgba(249,115,22,0.1)', to: '/admin/alerts' },
-    { icon: '🧭', label: t('today_navs'), value: usageStats?.todayNavigations || 0, color: 'var(--accent-blue)', bg: 'rgba(59,130,246,0.1)', to: '/admin/analytics' },
-    { icon: '📊', label: t('total_navs'), value: usageStats?.totalNavigations || 0, color: 'var(--accent-cyan)', bg: 'rgba(6,182,212,0.1)', to: '/admin/analytics' },
   ];
 
   return (
@@ -54,7 +44,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid-4 grid">
+      <div className="grid-2 grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
         {stats.map(s => (
           <div key={s.label} className="stat-card" style={{ borderColor: `${s.color}30`, background: s.bg, cursor: 'pointer' }} onClick={() => navigate(s.to)}>
             <div className="stat-icon" style={{ background: `${s.color}22`, fontSize: '1.3rem' }}>{s.icon}</div>
@@ -122,11 +112,10 @@ export default function AdminDashboard() {
       {/* Quick actions */}
       <div>
         <div className="section-title" style={{ marginBottom: '1rem' }}>⚡ {t('quick_actions')}</div>
-        <div className="grid-4 grid">
+        <div className="grid-3 grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {[
             { icon: '🗺️', label: t('station_editor'), to: '/admin/editor' },
             { icon: '🔔', label: t('send_notification'), to: '/admin/notifications' },
-            { icon: '📈', label: t('analytics'), to: '/admin/analytics' },
             { icon: '🔴', label: t('crowd_monitor'), to: '/admin/crowd' },
           ].map(a => (
             <button key={a.to} className="card" style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate(a.to)}>

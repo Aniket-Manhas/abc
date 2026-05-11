@@ -68,5 +68,20 @@
         "id": 13,
         "source": "http://172.20.10.6:8080/video",
         "location": "sdjb"
+    },
+    {
+        "id": 14,
+        "source": "http://192.168.29.55:8080/video",
+        "location": "phone"
+    },
+    {
+        "id": 15,
+        "source": "http://192.168.29.55:8080/video",
+        "location": "platform 20"
+    },
+    {
+        "id": 16,
+        "source": "http://192.168.29.80:8080/video",
+        "location": "lizard"
     }
 ]

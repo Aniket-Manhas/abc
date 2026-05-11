@@ -5,7 +5,6 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const setupSockets = require('./sockets/crowdSocket');
-const { startCrowdSimulator } = require('./mock/crowdSimulator');
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -108,8 +107,5 @@ connectDB().then(async () => {
     console.log(`📡 WebSocket: ws://localhost:${PORT}`);
     console.log(`🌐 API: http://localhost:${PORT}/api`);
     console.log(`🗺️  GeoJSON: http://localhost:${PORT}/geo\n`);
-
-    // Start crowd simulator
-    startCrowdSimulator(io);
   });
 });

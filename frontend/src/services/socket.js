@@ -9,7 +9,7 @@ let socket = null;
 export const getSocket = () => socket;
 
 export const connectSocket = (token = null) => {
-  if (socket?.connected) return socket;
+  if (socket) return socket;
 
   socket = io(SOCKET_URL, {
     auth: token ? { token } : {},

@@ -4,21 +4,21 @@ import { useSocket } from '../../contexts/SocketContext';
 
 // ── Admin navigation ──────────────────────────────────────────
 const ADMIN_NAV = [
-  { to: '/admin/dashboard',     icon: '📊', label: 'Overview' },
-  { to: '/admin/crowd',         icon: '🔴', label: 'Crowd Monitor' },
-  { to: '/admin/alerts',        icon: '🚨', label: 'Alert Manager' },
+  { to: '/admin/dashboard', icon: '📊', label: 'Overview' },
+  { to: '/admin/crowd', icon: '🔴', label: 'Crowd Monitor' },
+  { to: '/admin/alerts', icon: '🚨', label: 'Alert Manager' },
   { to: '/admin/notifications', icon: '🔔', label: 'Notifications' },
-  { to: '/admin/stampede',      icon: '📹', label: 'Stampede AI', badge: 'AI' },
-  { to: '/admin/editor',        icon: '🗺️', label: 'Station Editor' },
-  { to: '/admin/analytics',     icon: '📈', label: 'Analytics' },
+  { to: '/admin/stampede', icon: '📹', label: 'Stampede AI', badge: 'AI' },
+  { to: '/admin/editor', icon: '🗺️', label: 'Station Editor' },
+  { to: '/admin/analytics', icon: '📈', label: 'Analytics' },
 ];
 
 export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth();
   const { connected } = useSocket();
 
-  const accentColor  = 'var(--accent-admin)';
-  const accentBg     = 'var(--accent-admin-bg)';
+  const accentColor = 'var(--accent-admin)';
+  const accentBg = 'var(--accent-admin-bg)';
   const roleGradient = 'linear-gradient(135deg, #8b1a1a, #c0392b)';
 
   return (

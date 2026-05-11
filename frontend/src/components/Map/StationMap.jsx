@@ -33,11 +33,13 @@ export default function StationMap({
   selectedDest = null,
   showCrowdHeatmap = true,
   height = '500px',
+  crowdDataOverride = null,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
-  const { crowdData } = useSocket();
+  const { crowdData: socketCrowdData } = useSocket();
+  const crowdData = crowdDataOverride || socketCrowdData;
 
   const LAT = parseFloat(import.meta.env.VITE_MAP_DEFAULT_LAT) || 28.6430;
   const LNG = parseFloat(import.meta.env.VITE_MAP_DEFAULT_LNG) || 77.2239;

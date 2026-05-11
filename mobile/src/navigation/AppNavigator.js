@@ -13,6 +13,11 @@ import NavigationScreen   from '../screens/NavigationScreen';
 import EmergencyScreen    from '../screens/EmergencyScreen';
 import LastMileScreen     from '../screens/LastMileScreen';
 import AccessibilityScreen from '../screens/AccessibilityScreen';
+import LoginScreen        from '../screens/LoginScreen';
+import RegisterScreen     from '../screens/RegisterScreen';
+import LoadingScreen      from '../screens/LoadingScreen';
+
+import { useAuth } from '../contexts/AuthContext';
 
 const Stack  = createNativeStackNavigator();
 const Tab    = createBottomTabNavigator();
@@ -77,10 +82,23 @@ function PassengerTabs() {
 }
 
 export default function AppNavigator() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main" component={PassengerTabs} />
+        {user ? (
+          <Stack.Screen name="Main" component={PassengerTabs} />
+        ) : (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

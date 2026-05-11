@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const sendEmail = require('../utils/mailer');
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -17,15 +18,25 @@ router.post('/register', async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: 'Email already registered' });
 
-    // Prevent creating admin via public register
-    const userRole = role === 'admin' ? 'passenger' : (role || 'passenger');
-    const user = await User.create({ name, email, password, phone, role: userRole });
+    // Allow admin signup per user request
+    const userRole = role === 'admin' ? 'admin' : (role || 'passenger');
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60000);
+
+    const user = await User.create({ name, email, password, phone, role: userRole, otp, otpExpires });
+
+    sendEmail({
+      email: user.email,
+      subject: 'Verify your Sahyatri Account',
+      message: `Your OTP for registration is: ${otp}`
+    });
 
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
+      isEmailVerified: user.isEmailVerified,
       preferences: user.preferences,
       token: generateToken(user._id)
     });
@@ -42,11 +53,64 @@ router.post('/login', async (req, res) => {
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    
+    // Check verification status
+    if (!user.isEmailVerified) {
+      // resend OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.otp = otp;
+      user.otpExpires = new Date(Date.now() + 10 * 60000);
+      await user.save();
+      sendEmail({
+        email: user.email,
+        subject: 'Verify your Sahyatri Account',
+        message: `Your new OTP for login verification is: ${otp}`
+      });
+      return res.status(403).json({ message: 'Email not verified', unverified: true, email: user.email });
+    }
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      preferences: user.preferences,
+      token: generateToken(user._id)
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/auth/verify-otp
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email });
+    
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    if (user.isEmailVerified) {
+      return res.json({ message: 'Already verified' });
+    }
+    
+    if (!user.otp || user.otp !== otp || user.otpExpires < new Date()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    user.isEmailVerified = true;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    res.json({
+      message: 'Email verified successfully',
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
       preferences: user.preferences,
       token: generateToken(user._id)
     });

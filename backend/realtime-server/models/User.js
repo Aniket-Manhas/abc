@@ -6,6 +6,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true, minlength: 6 },
   phone: { type: String, default: '' },
+  isEmailVerified: { type: Boolean, default: false },
+  otp: { type: String, default: null },
+  otpExpires: { type: Date, default: null },
   role: { type: String, enum: ['passenger', 'admin'], default: 'passenger' },
   preferences: {
     accessibilityMode: { type: String, enum: ['none', 'wheelchair', 'elderly', 'visually_impaired'], default: 'none' },

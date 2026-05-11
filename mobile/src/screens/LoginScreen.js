@@ -4,13 +4,17 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius } from '../theme';
+import useTheme from '../useTheme';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp]           = useState('');
+  const [isOtpMode, setIsOtpMode] = useState(false);
   const [loading, setLoading]   = useState(false);
-  const { login } = useAuth();
+  const { login, verifyOtp } = useAuth();
+  const { colors, fs } = useTheme();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -22,10 +26,30 @@ export default function LoginScreen({ navigation }) {
       await login(email.trim(), password);
       // Navigator auto-redirects on user state change
     } catch (err) {
-      Alert.alert(
-        'Login failed',
-        err.response?.data?.message || 'Check your credentials and try again.',
-      );
+      if (err.response?.status === 403 && err.response?.data?.unverified) {
+        setIsOtpMode(true);
+        Alert.alert('Email not verified', 'An OTP has been sent to your email.');
+      } else {
+        Alert.alert(
+          'Login failed',
+          err.response?.data?.message || 'Check your credentials and try again.',
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      Alert.alert('Missing field', 'Please enter the OTP.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await verifyOtp(email.trim(), otp.trim());
+    } catch (err) {
+      Alert.alert('Verification failed', err.response?.data?.message || 'Invalid OTP.');
     } finally {
       setLoading(false);
     }
@@ -33,60 +57,100 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, { backgroundColor: colors.bgPrimary }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {/* Logo */}
         <View style={styles.logoWrap}>
           <Text style={styles.logoIcon}>🚂</Text>
-          <Text style={styles.logoText}>Sahyatri</Text>
-          <Text style={styles.logoSub}>Smart Indoor Railway Navigation</Text>
+          <Text style={[styles.logoText, { color: colors.accentSaffron, fontSize: fs(32) }]}>Sahyatri</Text>
+          <Text style={[styles.logoSub, { color: colors.textMuted, fontSize: fs(13) }]}>Smart Indoor Railway Navigation</Text>
         </View>
 
         {/* Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Passenger Login</Text>
+        <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary, fontSize: fs(18) }]}>Passenger Login</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="you@example.com"
-              placeholderTextColor={colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              returnKeyType="next"
-            />
-          </View>
+          {!isOtpMode ? (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.textMuted}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                />
+              </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-            />
-          </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.textMuted}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+              </View>
 
-          <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading
-              ? <ActivityIndicator color={colors.textOnAccent} />
-              : <Text style={styles.btnText}>🚀 Sign In</Text>
-            }
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, loading && styles.btnDisabled]}
+                onPress={handleLogin}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading
+                  ? <ActivityIndicator color={colors.textOnAccent} />
+                  : <Text style={styles.btnText}>🚀 Sign In</Text>
+                }
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Enter 6-digit OTP</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="123456"
+                  placeholderTextColor={colors.textMuted}
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  returnKeyType="done"
+                  onSubmitEditing={handleVerifyOtp}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.btn, loading && styles.btnDisabled]}
+                onPress={handleVerifyOtp}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading
+                  ? <ActivityIndicator color={colors.textOnAccent} />
+                  : <Text style={styles.btnText}>✅ Verify OTP</Text>
+                }
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.linkRow}
+                onPress={() => setIsOtpMode(false)}
+              >
+                <Text style={styles.linkText}>Back to Login</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           <TouchableOpacity
             style={styles.linkRow}

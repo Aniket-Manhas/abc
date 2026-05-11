@@ -12,11 +12,32 @@ export default function AdminCrowdMonitor() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [sortBy, setSortBy] = useState('density');
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [aiData, setAiData] = useState({});
 
   useEffect(() => {
     Promise.all([geoAPI.getStation(), geoAPI.getGraph()])
       .then(([geo, graph]) => { setStationGeo(geo.data); setGraphData(graph.data); })
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const sse = new EventSource('http://localhost:5002/stream_status');
+    sse.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.location && data.location !== 'Unknown' && data.location !== 'Default Camera') {
+          setAiData(prev => ({
+            ...prev,
+            [data.location]: {
+              personCount: data.persons,
+              density: data.status === 'DANGER' ? 'high' : data.status === 'HIGH RISK' ? 'high' : data.status === 'ELEVATED' ? 'medium' : 'low'
+            }
+          }));
+          setLastUpdated(new Date());
+        }
+      } catch (err) {}
+    };
+    return () => sse.close();
   }, []);
 
   useEffect(() => {
@@ -28,10 +49,22 @@ export default function AdminCrowdMonitor() {
   const nodeList = graphData ? Object.values(graphData.nodes).filter(n => n.type !== 'boundary') : [];
 
   const enriched = nodeList.map(node => {
+    // Override with AI Data if location string matches node name exactly
+    if (aiData[node.name]) {
+      return { ...node, density: aiData[node.name].density, personCount: aiData[node.name].personCount };
+    }
     const entry = crowdData[node.id];
     const density = entry ? (typeof entry === 'string' ? entry : entry.density) : 'low';
     const count = entry && typeof entry === 'object' ? entry.personCount : 0;
     return { ...node, density, personCount: count };
+  });
+
+  // Re-map enriched to mergedCrowdData for StationMap override
+  const mergedCrowdData = {};
+  enriched.forEach(n => {
+    if (n.density !== 'low' || n.personCount > 0) {
+      mergedCrowdData[n.id] = { density: n.density, personCount: n.personCount };
+    }
   });
 
   const sorted = [...enriched].sort((a, b) => {
@@ -88,6 +121,7 @@ export default function AdminCrowdMonitor() {
         <div>
           <div className="section-title" style={{ marginBottom: '0.75rem' }}>🗺️ Live Heatmap</div>
           <StationMap stationGeo={stationGeo} graphData={graphData} showCrowdHeatmap height="480px"
+            crowdDataOverride={mergedCrowdData}
             onNodeClick={n => setSelectedNode(n)} />
           {selectedNode && (
             <div style={{ marginTop: '0.75rem', padding: '1rem', background: 'var(--bg-card)', border: '1px solid var(--border-bright)', borderRadius: 10 }}>
@@ -96,9 +130,17 @@ export default function AdminCrowdMonitor() {
                 Floor {selectedNode.floor} · {selectedNode.type}
               </div>
               {(() => {
-                const entry = crowdData[selectedNode.id];
-                const density = entry ? (typeof entry === 'string' ? entry : entry.density) : 'low';
-                return <span className={`badge badge-${density}`} style={{ marginTop: '0.5rem', display: 'inline-flex' }}><span className={`crowd-dot ${density}`} style={{ width: 7, height: 7 }} />{density}</span>;
+                const nodeMatch = enriched.find(e => e.id === selectedNode.id);
+                const density = nodeMatch ? nodeMatch.density : 'low';
+                const count = nodeMatch ? nodeMatch.personCount : 0;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <span className={`badge badge-${density}`} style={{ display: 'inline-flex' }}>
+                      <span className={`crowd-dot ${density}`} style={{ width: 7, height: 7 }} />{density}
+                    </span>
+                    {count > 0 && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{count} persons</span>}
+                  </div>
+                );
               })()}
             </div>
           )}

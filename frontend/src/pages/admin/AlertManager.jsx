@@ -103,6 +103,13 @@ export default function AlertManager() {
               </div>
               <div style={{ fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
                 📍 {alert.location?.nodeName} · Floor {alert.location?.floor || 0}
+                {alert.location?.lat && alert.location?.lng && (
+                  <span style={{ marginLeft: '0.5rem', color: 'var(--accent-blue)' }}>
+                    <a href={`https://maps.google.com/?q=${alert.location.lat},${alert.location.lng}`} target="_blank" rel="noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>
+                      ({alert.location.lat.toFixed(5)}, {alert.location.lng.toFixed(5)})
+                    </a>
+                  </span>
+                )}
               </div>
               {alert.message && <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontStyle: 'italic' }}>"{alert.message}"</div>}
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>

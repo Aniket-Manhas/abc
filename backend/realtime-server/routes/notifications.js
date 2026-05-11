@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/auth');
+const sendEmail = require('../utils/mailer');
 
 // POST /api/notifications — Admin broadcasts notification
 router.post('/', protect, adminOnly, async (req, res) => {
@@ -22,6 +24,32 @@ router.post('/', protect, adminOnly, async (req, res) => {
       } else {
         io.emit('notification:receive', notification);
       }
+    }
+
+    // If it's a DANGER or emergency alert, also send an email to users
+    if (type === 'danger' || type === 'emergency' || type === 'critical') {
+      const targetQuery = targetRole && targetRole !== 'all' ? { role: targetRole } : {};
+      const users = await User.find(targetQuery).select('email');
+      
+      const emailMessage = `
+Alert from Sahyatri Station Management
+--------------------------------------
+TITLE: ${title}
+MESSAGE: ${message}
+
+Please exercise caution and follow instructions from station personnel.
+      `;
+
+      // Send emails (fire and forget to not block request)
+      users.forEach(user => {
+        if (user.email) {
+          sendEmail({
+            email: user.email,
+            subject: `[Sahyatri Alert] ${title}`,
+            message: emailMessage
+          });
+        }
+      });
     }
 
     res.status(201).json(notification);

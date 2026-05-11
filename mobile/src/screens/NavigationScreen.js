@@ -19,17 +19,22 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import * as Location from 'expo-location';
 
-import { indoorNavAPI } from '../services/api';
+import { indoorNavAPI, analyticsAPI_req } from '../services/api';
 import { useSocket }       from '../contexts/SocketContext';
+import { useAccessibility } from '../contexts/AccessibilityContext';
 import IndoorMap           from '../components/IndoorMap';
 import CrowdBadge          from '../components/CrowdBadge';
 import { colors, spacing, radius } from '../theme';
+import useTheme from '../useTheme';
 
 // Default position — College Entrance
 const DEFAULT_LNGLAT = [74.81924, 32.81261];
 
 export default function NavigationScreen() {
   const { crowdData, emitLocation } = useSocket();
+  const { settings: a11y, updateSettings: updateA11y } = useAccessibility();
+  const { colors, fs } = useTheme();
+  const accessible = a11y.avoidStairs;
 
   // Track position used for last route fetch (to gate re-fetches by distance)
   const lastRoutePosRef = useRef(null);
@@ -53,12 +58,12 @@ export default function NavigationScreen() {
   const [destinationName, setDestinationName] = useState('');
   const [destSearch,     setDestSearch]     = useState('');
   const [showDestList,   setShowDestList]   = useState(false);
-  const [accessible,     setAccessible]     = useState(false);
   const [routeCoords,    setRouteCoords]    = useState(null);
   const [outsideApproach,setOutsideApproach] = useState(null);
   const [routeLoading,   setRouteLoading]   = useState(false);
   const [routeError,     setRouteError]     = useState('');
   const [routeDistance,  setRouteDistance]  = useState(null);
+  const [routeDirections, setRouteDirections] = useState([]);
   const [mockStartId,    setMockStartId]    = useState('');
 
   // ── Tab ────────────────────────────────────────────────────
@@ -145,8 +150,20 @@ export default function NavigationScreen() {
       const coords = data.coordinates || data.path || [];
       setRouteCoords(coords);
       setOutsideApproach(data.outsideApproach || null);
+      if (data.directions) setRouteDirections(data.directions);
+      else setRouteDirections([]);
       if (data.totalWeight) setRouteDistance(Math.round(data.totalWeight));
       if (!overridePos) lastRoutePosRef.current = userLngLat; // track for GPS updates
+
+      // Log to analytics server
+      analyticsAPI_req.logNavigation({
+        sourceNode: 'GPS/Picker',
+        destNode: destination,
+        totalDistance: data.totalWeight || 0,
+        estimatedTime: Math.round((data.totalWeight || 0) / 1.2), // rough 1.2m/s walking speed
+        accessibilityMode: accessible ? 'wheelchair' : 'none',
+        crowdAware: true
+      }).catch(err => console.log('Analytics log failed:', err));
     } catch (e) {
       setRouteError(e.message || 'Route calculation failed');
     } finally {
@@ -228,14 +245,14 @@ export default function NavigationScreen() {
   const hasRoute = routeCoords && routeCoords.length > 1;
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: colors.bgPrimary }]}>
 
       {/* ── Control panel ── */}
-      <View style={styles.panel}>
+      <View style={[styles.panel, { backgroundColor: colors.bgSecondary, borderBottomColor: colors.border }]}>
 
         {/* Venue selector */}
-        <Text style={styles.label}>Venue</Text>
-        <View style={[styles.pickerBox, { marginBottom: 6 }]}>
+        <Text style={[styles.label, { color: colors.textSecondary, fontSize: fs(12) }]}>Venue</Text>
+        <View style={[styles.pickerBox, { marginBottom: 6, backgroundColor: colors.bgElevated, borderColor: colors.border }]}>
           <Picker
             selectedValue={venue}
             onValueChange={setVenue}
@@ -320,7 +337,7 @@ export default function NavigationScreen() {
             <Text style={styles.toggleLabel}>♿ Accessible</Text>
             <Switch
               value={accessible}
-              onValueChange={setAccessible}
+              onValueChange={v => updateA11y({ avoidStairs: v, preferLift: v })}
               trackColor={{ true: colors.accentBlue, false: colors.border }}
               thumbColor={accessible ? '#fff' : colors.textMuted}
             />
@@ -362,6 +379,7 @@ export default function NavigationScreen() {
       <View style={styles.tabBar}>
         {[
           { key: 'map',   label: '🗺️ Map'  },
+          { key: 'steps', label: '🚶 Steps' },
           { key: 'crowd', label: '👥 Crowd' },
         ].map(t => (
           <TouchableOpacity
@@ -386,6 +404,24 @@ export default function NavigationScreen() {
           outsideApproach={outsideApproach}
           accessible={accessible}
         />
+      )}
+
+      {/* ── Steps tab ── */}
+      {activeTab === 'steps' && (
+        <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+          {!hasRoute ? (
+            <Text style={styles.emptyText}>Find a route to see steps.</Text>
+          ) : routeDirections.length === 0 ? (
+            <Text style={styles.emptyText}>No directions available.</Text>
+          ) : (
+            routeDirections.map((step, i) => (
+              <View key={`step-${i}`} style={styles.stepRow}>
+                <View style={styles.stepNumber}><Text style={styles.stepNumberText}>{i + 1}</Text></View>
+                <Text style={styles.stepText}>{step}</Text>
+              </View>
+            ))
+          )}
+        </ScrollView>
       )}
 
       {/* ── Crowd tab ── */}
@@ -515,4 +551,9 @@ const styles = StyleSheet.create({
   crowdRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
   crowdName:  { color: colors.textSecondary, fontSize: 14 },
   emptyText:  { color: colors.textMuted, textAlign: 'center', marginTop: 40 },
+
+  stepRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  stepNumber: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.accentBlue, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  stepNumberText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  stepText: { color: colors.textPrimary, fontSize: 15, flex: 1 },
 });

@@ -22,6 +22,7 @@ analyticsAPI.interceptors.request.use(authInterceptor);
 export const authAPI = {
   login:             (data)  => realtimeAPI.post('/auth/login', data),
   register:          (data)  => realtimeAPI.post('/auth/register', data),
+  verifyOtp:         (data)  => realtimeAPI.post('/auth/verify-otp', data),
   me:                ()      => realtimeAPI.get('/auth/me'),
   updatePreferences: (prefs) => realtimeAPI.put('/auth/preferences', prefs),
 };

@@ -10,6 +10,7 @@ import { SocketProvider } from './src/contexts/SocketContext';
 import { AccessibilityProvider } from './src/contexts/AccessibilityContext';
 import { EmergencyProvider } from './src/contexts/EmergencyContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import NotificationBanner from './src/components/NotificationBanner';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <SocketProvider>
           <AccessibilityProvider>
             <EmergencyProvider>
+              <NotificationBanner />
               <AppNavigator />
             </EmergencyProvider>
           </AccessibilityProvider>
