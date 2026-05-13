@@ -56,8 +56,10 @@ DENSITY_DANGER    = 6.0   # ≥ 4.0       → DANGER      (crush risk / stampede
 # DENSITY_DANGER = 0.04
 
 # ── Performance / Lag Reduction ───────────────────────────────────────────────
-PROCESS_WIDTH   = 1280          # Wider processing → less person-shrinkage at scale-down
-CAPTURE_BUFFER  = 1
+# 640 px → YOLO runs ~30-80 ms/frame on a laptop (was 1280 = 150-300 ms → major lag source)
+# Increase to 960 or 1280 only if running on a machine with a dedicated GPU.
+PROCESS_WIDTH   = 640
+CAPTURE_BUFFER  = 1             # Always keep 1; larger values cause stale-frame backlog
 
 # ── Risk Scoring Weights ──────────────────────────────────────────────────────
 DENSITY_WEIGHT  = 0.60

@@ -95,12 +95,14 @@ def save_cameras(cameras):
 # =============================================================================
 class VideoCamera:
     def __init__(self, source):
-        if isinstance(source, str):
+        self._is_ip_cam = isinstance(source, str)
+        if self._is_ip_cam:
             self.video = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
         else:
             self.video = cv2.VideoCapture(source, cv2.CAP_DSHOW)
 
-        self.video.set(cv2.CAP_PROP_BUFFERSIZE, config.CAPTURE_BUFFER)
+        # Buffer size 1: always grab the newest frame; avoid backlog
+        self.video.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         # Wait for first frame (IP cams can be slow)
         deadline = time.time() + 10.0
@@ -131,11 +133,12 @@ class VideoCamera:
         self.last_count       = 0
         self.using_p2pnet     = False
 
-        self.latest_frame = None
-        self.stopped      = False
-        self._frame_lock  = threading.Lock()   # protects raw_frame
-        self.raw_frame    = None
-        
+        self.latest_frame  = None
+        self.stopped       = False
+        self._frame_lock   = threading.Lock()   # protects raw_frame
+        self.raw_frame     = None
+        self._frame_event  = threading.Event()  # signals a new rendered frame
+
         self.last_alert_time  = 0
         self.alert_cooldown   = 60  # seconds between identical alerts
         self.last_analytics_time = 0
@@ -150,21 +153,43 @@ class VideoCamera:
     # ── Frame reader ──────────────────────────────────────────────────────────
 
     def _reader(self):
+        """Continuously drain the capture buffer, keeping only the newest frame.
+        For IP cameras we grab() multiple times to flush stale buffered frames,
+        then retrieve() once to get the actual latest image."""
         while not self.stopped:
-            ret, frame = self.video.read()
-            if ret:
-                with self._frame_lock:
-                    self.raw_frame = frame
+            if self._is_ip_cam:
+                # Drain any buffered frames so we always get the latest
+                grabbed = False
+                for _ in range(4):          # grab up to 4 buffered frames
+                    if self.video.grab():
+                        grabbed = True
+                    else:
+                        break
+                if grabbed:
+                    ret, frame = self.video.retrieve()
+                    if ret:
+                        with self._frame_lock:
+                            self.raw_frame = frame.copy()
+                else:
+                    time.sleep(0.005)
             else:
-                time.sleep(0.01)
+                ret, frame = self.video.read()
+                if ret:
+                    with self._frame_lock:
+                        self.raw_frame = frame.copy()
+                else:
+                    time.sleep(0.005)
 
     # ── Processing loop ───────────────────────────────────────────────────────
 
     def _update(self):
         global global_metrics
+        # Target ~15 processed frames/sec to balance CPU vs freshness
+        _proc_interval = 1.0 / 15.0
         while not self.stopped:
+            _t_start = time.time()
             with self._frame_lock:
-                frame = self.raw_frame
+                frame = self.raw_frame.copy() if self.raw_frame is not None else None
             if frame is None:
                 time.sleep(0.01)
                 continue
@@ -314,9 +339,16 @@ class VideoCamera:
                 density_m2=global_density_m2,
             )
             ret, jpeg = cv2.imencode('.jpg', output,
-                                     [cv2.IMWRITE_JPEG_QUALITY, 80])
+                                     [cv2.IMWRITE_JPEG_QUALITY, 75])
             if ret:
                 self.latest_frame = jpeg.tobytes()
+                self._frame_event.set()  # signal new frame is ready
+
+            # Throttle processing loop to target interval
+            elapsed = time.time() - _t_start
+            sleep_t = max(0.0, _proc_interval - elapsed)
+            if sleep_t > 0:
+                time.sleep(sleep_t)
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -341,14 +373,20 @@ class VideoCamera:
 # MJPEG stream generator
 # =============================================================================
 def gen(camera):
+    """MJPEG generator — uses Event to serve exactly one frame per processing cycle.
+    This prevents stale frame re-serving and eliminates the blind sleep timer."""
+    last_frame = None
     while True:
+        # Wait up to 0.1s for a new frame to be ready
+        camera._frame_event.wait(timeout=0.1)
+        camera._frame_event.clear()
         frame = camera.get_frame()
-        if frame is not None:
+        if frame is not None and frame is not last_frame:
+            last_frame = frame
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-            time.sleep(0.033)
-        else:
-            time.sleep(0.05)
+        elif frame is None:
+            time.sleep(0.02)
 
 
 # =============================================================================
@@ -600,8 +638,10 @@ class VideoFileCamera:
         if not self.video.isOpened():
             raise ValueError(f"Cannot open video: {path}")
 
-        self.fps   = self.video.get(cv2.CAP_PROP_FPS) or 25.0
-        self.delay = max(1.0 / self.fps, 0.02)
+        # Cap playback at 25 fps; very high-fps sources would otherwise race
+        raw_fps    = self.video.get(cv2.CAP_PROP_FPS) or 25.0
+        self.fps   = min(raw_fps, 25.0)
+        self.delay = 1.0 / self.fps
 
         # ── Shared pipeline modules ──────────────────────────────────────────
         self.detector      = PersonDetector()
@@ -644,6 +684,9 @@ class VideoFileCamera:
 
     def _run(self):
         while not self.stopped:
+            # Start timing BEFORE read+process so throttle accounts for all work
+            frame_start = time.time()
+
             ret, frame = self.video.read()
             if not ret:
                 # Loop back to start
@@ -651,6 +694,8 @@ class VideoFileCamera:
                 self.flow_analyzer = OpticalFlowAnalyzer()  # reset flow state
                 continue
 
+            # Work on a copy so the reader thread can't race us
+            frame = frame.copy()
             self.frame_count    += 1
             self.p2pnet_counter += 1
 
@@ -731,18 +776,18 @@ class VideoFileCamera:
                 using_p2pnet=self.using_p2pnet,
                 density_m2=gd,
             )
-            # Throttle to native video FPS to prevent jitter from frame-skipping
-            frame_start = time.time()
 
-            ret2, jpeg = cv2.imencode('.jpg', out, [cv2.IMWRITE_JPEG_QUALITY, 82])
+            ret2, jpeg = cv2.imencode('.jpg', out, [cv2.IMWRITE_JPEG_QUALITY, 78])
             if ret2:
                 self.latest_frame = jpeg.tobytes()
                 self._frame_ready.set()   # wake any waiting generator
 
             # Precise FPS throttle: sleep the remainder of the frame period
+            # (frame_start was set BEFORE all processing, so this is accurate)
             elapsed = time.time() - frame_start
             sleep_t = max(0.0, self.delay - elapsed)
-            time.sleep(sleep_t)
+            if sleep_t > 0:
+                time.sleep(sleep_t)
 
     def get_frame(self):
         return self.latest_frame

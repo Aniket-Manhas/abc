@@ -16,72 +16,7 @@
     },
     {
         "id": 3,
-        "source": "http://192.168.29.55:8080",
-        "location": "gate"
-    },
-    {
-        "id": 4,
         "source": "http://192.168.29.91:8080/video",
-        "location": "test"
-    },
-    {
-        "id": 5,
-        "source": "http://192.168.29.91:8080/videofeed",
-        "location": "a"
-    },
-    {
-        "id": 6,
-        "source": "http://192.168.29.91:8080/mjpegfeed",
-        "location": "vb"
-    },
-    {
-        "id": 7,
-        "source": "http://192.168.29.91:8080/video",
-        "location": "video"
-    },
-    {
-        "id": 8,
-        "source": "http://192.168.29.91:8080/video",
-        "location": "work"
-    },
-    {
-        "id": 9,
-        "source": "http://10.207.247.212:8080",
-        "location": "room"
-    },
-    {
-        "id": 10,
-        "source": "http://10.207.247.212:8080",
-        "location": "current"
-    },
-    {
-        "id": 11,
-        "source": "http://10.253.10.142:8080",
-        "location": "asnd"
-    },
-    {
-        "id": 12,
-        "source": "http://10.253.10.142:8080/video",
-        "location": "chlJaBhai "
-    },
-    {
-        "id": 13,
-        "source": "http://172.20.10.6:8080/video",
-        "location": "sdjb"
-    },
-    {
-        "id": 14,
-        "source": "http://192.168.29.55:8080/video",
-        "location": "phone"
-    },
-    {
-        "id": 15,
-        "source": "http://192.168.29.55:8080/video",
-        "location": "platform 20"
-    },
-    {
-        "id": 16,
-        "source": "http://192.168.29.80:8080/video",
-        "location": "lizard"
+        "location": "platform 2"
     }
 ]
