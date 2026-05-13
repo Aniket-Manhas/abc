@@ -13,8 +13,7 @@ const COLLEGE_LAT = 32.81261;
 const COLLEGE_LNG = 74.81924;
 const STATION_LAT = 32.704787;
 const STATION_LNG = 74.880537;
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5pa2V0bWFuaGFzODAxIiwiYSI6ImNtOGxyNDNldDA4NDIyanBsYnFuczE5cjcifQ.7HPta07dHTFnFsGDrrih1g';
-
+const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 const LEAFLET_HTML = `
 <!DOCTYPE html>
 <html>
