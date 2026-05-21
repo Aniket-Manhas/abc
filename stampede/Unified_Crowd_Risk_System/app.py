@@ -22,6 +22,7 @@ import time
 import json
 import os
 import mimetypes
+from datetime import datetime
 from werkzeug.utils import secure_filename
 import requests
 
@@ -61,6 +62,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CAMERAS_FILE = "cameras.json"
 current_camera_index = 0
 
+# Camera manager will be initialized after the CameraManager class is defined
+camera_manager = None
+
 global_metrics = {
     "location":               "Loading…",
     "person_count":           0,
@@ -74,6 +78,11 @@ global_metrics = {
     "zone_data":              [],
     "density_grid":           None,   # 2-D list (GRID_ROWS × GRID_COLS) of p/m²
     "risk_score_grid":        None,   # 2-D list (GRID_ROWS × GRID_COLS) of 0–1
+    # Multi-camera fields
+    "all_cameras_metrics":    {},
+    "stampede_cameras":       [],
+    "total_persons_all":      0,
+    "max_risk_level_all":     "SAFE",
 }
 
 
@@ -94,7 +103,8 @@ def save_cameras(cameras):
 # VideoCamera — threaded capture + hybrid processing pipeline
 # =============================================================================
 class VideoCamera:
-    def __init__(self, source):
+    def __init__(self, source, camera_id=None):
+        self.camera_id = camera_id  # Track which camera instance this is
         self._is_ip_cam = isinstance(source, str)
         if self._is_ip_cam:
             self.video = cv2.VideoCapture(source, cv2.CAP_FFMPEG)
@@ -320,6 +330,19 @@ class VideoCamera:
                 "density_grid":           d_grid,
                 "risk_score_grid":        r_grid,
             })
+            
+            # Report metrics to camera manager for parallel processing
+            if self.camera_id is not None:
+                camera_manager.update_camera_metrics(self.camera_id, {
+                    "person_count":    global_count,
+                    "peak_count":      new_peak,
+                    "risk_level":      global_risk,
+                    "alert_msg":       alert_msg,
+                    "density_m2":      round(global_density_m2, 3),
+                    "risk_score":      risk_score,
+                    "using_p2pnet":    self.using_p2pnet,
+                    "zone_data":       zone_data,
+                })
 
             # ── Render annotated frame ────────────────────────────────────────
             output = self.visualizer.render(
@@ -370,6 +393,180 @@ class VideoCamera:
 
 
 # =============================================================================
+# CameraManager — Manages multiple cameras in parallel for simultaneous detection
+# =============================================================================
+class CameraManager:
+    """
+    Manages multiple VideoCamera instances running in parallel.
+    Aggregates metrics from all cameras and provides:
+    - Maximum risk level across all cameras
+    - Sum of detected persons across all cameras
+    - List of cameras with stampede risk + locations
+    - Individual camera metrics
+    """
+    
+    def __init__(self):
+        self.cameras = {}  # {camera_id: VideoCamera}
+        self.camera_configs = {}  # {camera_id: config}
+        self.lock = threading.Lock()
+        self.camera_metrics = {}  # {camera_id: metrics_dict}
+        self.last_danger_alert_time = {}  # Track per-camera alert throttling
+        
+    def add_camera(self, camera_id, source, location):
+        """Add and start a new camera."""
+        with self.lock:
+            if camera_id in self.cameras:
+                self.cameras[camera_id].stop()
+            
+            try:
+                camera = VideoCamera(source)
+                self.cameras[camera_id] = camera
+                self.camera_configs[camera_id] = {
+                    "id": camera_id,
+                    "source": source,
+                    "location": location
+                }
+                self.camera_metrics[camera_id] = {}
+                print(f"[CameraManager] Started camera {camera_id} ({location})")
+                return True
+            except Exception as e:
+                print(f"[CameraManager] Failed to start camera {camera_id}: {e}")
+                return False
+    
+    def remove_camera(self, camera_id):
+        """Stop and remove a camera."""
+        with self.lock:
+            if camera_id in self.cameras:
+                self.cameras[camera_id].stop()
+                del self.cameras[camera_id]
+                del self.camera_configs[camera_id]
+                del self.camera_metrics[camera_id]
+                if camera_id in self.last_danger_alert_time:
+                    del self.last_danger_alert_time[camera_id]
+                print(f"[CameraManager] Stopped camera {camera_id}")
+    
+    def get_aggregated_metrics(self):
+        """Get aggregated metrics from all cameras."""
+        with self.lock:
+            if not self.camera_metrics:
+                return {
+                    "all_cameras": {},
+                    "aggregated": {
+                        "total_persons": 0,
+                        "max_risk_level": "SAFE",
+                        "risk_score": 0.0,
+                        "stampede_cameras": [],  # [{"id": x, "location": y, "risk": z}]
+                        "high_risk_count": 0,
+                        "danger_count": 0,
+                    }
+                }
+            
+            # Copy current camera metrics
+            all_metrics = dict(self.camera_metrics)
+            
+            # Aggregate
+            total_persons = 0
+            max_risk_level = "SAFE"
+            max_risk_score = 0.0
+            stampede_cameras = []
+            high_risk_count = 0
+            danger_count = 0
+            
+            risk_levels = {"SAFE": 0, "WARNING": 1, "HIGH RISK": 2, "DANGER": 3}
+            
+            for cam_id, metrics in all_metrics.items():
+                if not metrics:
+                    continue
+                
+                persons = metrics.get("person_count", 0)
+                risk = metrics.get("risk_level", "SAFE")
+                risk_score = metrics.get("risk_score", 0.0)
+                location = self.camera_configs.get(cam_id, {}).get("location", "Unknown")
+                
+                total_persons += persons
+                max_risk_score = max(max_risk_score, risk_score)
+                
+                # Update max risk level
+                if risk_levels.get(risk, 0) > risk_levels.get(max_risk_level, 0):
+                    max_risk_level = risk
+                
+                # Track high-risk cameras
+                if risk in ("HIGH RISK", "DANGER"):
+                    stampede_cameras.append({
+                        "id": cam_id,
+                        "location": location,
+                        "risk_level": risk,
+                        "persons": persons,
+                        "density_m2": metrics.get("density_m2", 0.0)
+                    })
+                    if risk == "HIGH RISK":
+                        high_risk_count += 1
+                    elif risk == "DANGER":
+                        danger_count += 1
+            
+            return {
+                "all_cameras": all_metrics,
+                "aggregated": {
+                    "total_persons": total_persons,
+                    "max_risk_level": max_risk_level,
+                    "risk_score": max_risk_score,
+                    "stampede_cameras": stampede_cameras,
+                    "high_risk_count": high_risk_count,
+                    "danger_count": danger_count,
+                    "active_cameras": len(self.cameras),
+                }
+            }
+    
+    def update_camera_metrics(self, camera_id, metrics):
+        """Update metrics for a specific camera."""
+        with self.lock:
+            self.camera_metrics[camera_id] = metrics
+            
+            # Send email alerts for DANGER level
+            risk_level = metrics.get("risk_level", "SAFE")
+            if risk_level == "DANGER":
+                now = time.time()
+                last_alert = self.last_danger_alert_time.get(camera_id, 0)
+                alert_cooldown = 60  # seconds between alerts for same camera
+                
+                if now - last_alert > alert_cooldown:
+                    self.last_danger_alert_time[camera_id] = now
+                    location = self.camera_configs.get(camera_id, {}).get("location", "Unknown")
+                    person_count = metrics.get("person_count", 0)
+                    density = metrics.get("density_m2", 0.0)
+                    
+                    subject = f"🚨 STAMPEDE ALERT [DANGER] at {location}"
+                    body = (
+                        f"CRITICAL: Stampede risk detected!\n\n"
+                        f"Camera: {location}\n"
+                        f"Persons Detected: {person_count}\n"
+                        f"Crowd Density: {density:.2f} persons/m²\n"
+                        f"Status: {metrics.get('alert_msg', '')}\n\n"
+                        f"IMMEDIATE ACTION REQUIRED: Initiate emergency protocols."
+                    )
+                    send_alert(subject, body, risk_level="DANGER")
+    
+    def get_camera(self, camera_id):
+        """Get a specific camera instance."""
+        with self.lock:
+            return self.cameras.get(camera_id)
+    
+    def stop_all(self):
+        """Stop all cameras."""
+        with self.lock:
+            for camera in self.cameras.values():
+                try:
+                    camera.stop()
+                except Exception:
+                    pass
+            self.cameras.clear()
+            self.camera_metrics.clear()
+
+
+# Initialize camera manager for parallel processing (after class is defined)
+camera_manager = CameraManager()
+
+# =============================================================================
 # MJPEG stream generator
 # =============================================================================
 def gen(camera):
@@ -398,6 +595,9 @@ camera_instance = None
 @app.route('/')
 def index():
     cameras = load_cameras()
+    # Auto-start all cameras on startup
+    for cam in cameras:
+        camera_manager.add_camera(cam["id"], cam["source"], cam["location"])
     return render_template('index.html',
                            cameras=cameras,
                            current_cam_id=current_camera_index)
@@ -405,26 +605,30 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    global camera_instance, current_camera_index
+    global current_camera_index
     cameras = load_cameras()
 
     cam_param = request.args.get('camera')
     if cam_param is not None:
         try:
             idx = int(cam_param)
-            if 0 <= idx < len(cameras) and idx != current_camera_index:
+            if 0 <= idx < len(cameras):
                 current_camera_index = idx
-                if camera_instance:
-                    camera_instance.stop()
-                    camera_instance = None
         except ValueError:
             pass
 
-    cam = cameras[current_camera_index] if current_camera_index < len(cameras) else cameras[0]
+    if current_camera_index >= len(cameras):
+        current_camera_index = 0
+
+    cam = cameras[current_camera_index]
+    cam_id = cam["id"]
     global_metrics["location"] = cam["location"]
 
+    # Get or create camera instance
+    camera_instance = camera_manager.get_camera(cam_id)
     if camera_instance is None:
-        camera_instance = VideoCamera(cam["source"])
+        camera_manager.add_camera(cam_id, cam["source"], cam["location"])
+        camera_instance = camera_manager.get_camera(cam_id)
 
     return Response(gen(camera_instance),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -432,7 +636,39 @@ def video_feed():
 
 @app.route('/metrics')
 def metrics():
+    """Returns metrics for the currently selected camera."""
     return jsonify(global_metrics)
+
+
+@app.route('/metrics/all')
+def metrics_all():
+    """Returns aggregated metrics from all cameras."""
+    agg = camera_manager.get_aggregated_metrics()
+    
+    # Build response
+    response = {
+        "current_camera": {
+            "id": current_camera_index,
+            "location": global_metrics.get("location", "Unknown"),
+            "metrics": global_metrics,
+        },
+        "all_cameras": agg["all_cameras"],
+        "aggregated": agg["aggregated"],
+    }
+    return jsonify(response)
+
+
+@app.route('/metrics/summary')
+def metrics_summary():
+    """Returns a summary of all cameras' status."""
+    agg = camera_manager.get_aggregated_metrics()
+    return jsonify({
+        "total_persons_all_cameras": agg["aggregated"]["total_persons"],
+        "max_risk_level": agg["aggregated"]["max_risk_level"],
+        "stampede_cameras": agg["aggregated"]["stampede_cameras"],
+        "active_cameras": agg["aggregated"]["active_cameras"],
+        "timestamp": datetime.now().isoformat(),
+    })
 
 
 @app.route('/api/status')
@@ -449,6 +685,9 @@ def stream_status():
     """Server-Sent Events — emits full metrics JSON every second."""
     def event_gen():
         while True:
+            # Get aggregated metrics from all cameras
+            agg = camera_manager.get_aggregated_metrics()
+            
             data = {
                 "status":             global_metrics.get("risk_level",     "SAFE"),
                 "persons":            global_metrics.get("person_count",   0),
@@ -469,6 +708,11 @@ def stream_status():
                     1 for z in global_metrics.get("zone_data", [])
                     if z.get("risk_level") == "DANGER"
                 ),
+                # Multi-camera data
+                "total_persons_all":  agg["aggregated"]["total_persons"],
+                "max_risk_all":       agg["aggregated"]["max_risk_level"],
+                "stampede_cameras":   agg["aggregated"]["stampede_cameras"],
+                "active_cameras":     agg["aggregated"]["active_cameras"],
             }
             yield f"data: {json.dumps(data)}\n\n"
             time.sleep(1.0)
@@ -585,7 +829,7 @@ def upload_media():
 
 @app.route('/settings', methods=['POST'])
 def update_settings():
-    global current_camera_index, camera_instance
+    global current_camera_index
     data     = request.json
     source   = data.get("source")
     location = data.get("location")
@@ -600,23 +844,22 @@ def update_settings():
     cameras.append({"id": new_id, "source": source, "location": location})
     save_cameras(cameras)
 
+    # Start the new camera in parallel
+    camera_manager.add_camera(new_id, source, location)
     current_camera_index = new_id
-    if camera_instance:
-        camera_instance.stop()
-        camera_instance = None
 
     return jsonify({"success": True, "id": new_id})
 
 
 @app.route('/switch/<int:cam_id>', methods=['POST'])
 def switch_camera(cam_id):
-    global current_camera_index, camera_instance
+    global current_camera_index
     cameras = load_cameras()
     if 0 <= cam_id < len(cameras):
         current_camera_index = cam_id
-        if camera_instance:
-            camera_instance.stop()
-            camera_instance = None
+        # Ensure camera is running
+        cam = cameras[cam_id]
+        camera_manager.add_camera(cam["id"], cam["source"], cam["location"])
         return jsonify({"success": True})
     return jsonify({"success": False})
 
