@@ -21,7 +21,9 @@ export default function AdminCrowdMonitor() {
   }, []);
 
   useEffect(() => {
-    const sse = new EventSource('http://localhost:5002/stream_status');
+    const STAMPEDE_URL = import.meta.env.VITE_STAMPEDE_URL || '';
+    if (!STAMPEDE_URL) return; // don't attempt connection if not configured
+    const sse = new EventSource(`${STAMPEDE_URL}/stream_status`);
     sse.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
