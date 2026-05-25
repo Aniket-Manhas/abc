@@ -170,7 +170,7 @@ router.delete('/prune', async (req, res) => {
   try {
     const days = parseInt(process.env.DATA_RETENTION_DAYS) || 30;
     const result = await db.runAsync(`DELETE FROM crowd_history WHERE recorded_at < datetime('now', '-${days} days')`);
-    res.json({ deleted: result.changes, message: \`Pruned records older than \${days} days\` });
+    res.json({ deleted: result.changes, message: `Pruned records older than ${days} days` });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
