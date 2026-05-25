@@ -23,7 +23,7 @@ router.post('/register', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60000);
 
-    const user = await User.create({ name, email, password, phone, role: userRole, otp, otpExpires });
+    const user = await User.create({ name, email, password, phone, role: userRole, otp, otpExpires, isEmailVerified: true });
 
     sendEmail({
       email: user.email,
@@ -54,8 +54,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
-    // Check verification status
-    if (!user.isEmailVerified) {
+    // Check verification status (disabled/bypassed for web and admin convenience)
+    if (false && !user.isEmailVerified) {
       // resend OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       user.otp = otp;
