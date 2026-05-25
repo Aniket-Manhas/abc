@@ -8,9 +8,7 @@ import LoadingSpinner from './components/shared/LoadingSpinner';
 // Admin pages
 import AdminLogin         from './pages/admin/AdminLogin';
 import AdminDashboard     from './pages/admin/AdminDashboard';
-import CrowdMonitor       from './pages/admin/CrowdMonitor';
 import AlertManager       from './pages/admin/AlertManager';
-import StationEditor      from './pages/admin/StationEditor';
 import Analytics          from './pages/admin/Analytics';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import StampedeMonitor    from './pages/admin/StampedeMonitor';
@@ -18,9 +16,7 @@ import StampedeMonitor    from './pages/admin/StampedeMonitor';
 // Page title map
 const PAGE_TITLES = {
   '/admin/dashboard':       '📊 Overview',
-  // '/admin/crowd':           '🔴 Crowd Monitor',
   '/admin/alerts':          '🚨 Alert Manager',
-  '/admin/editor':          '🗺️ Station Editor',
   '/admin/analytics':       '📈 Analytics',
   '/admin/notifications':   '🔔 Notifications',
   '/admin/stampede':        '📹 Stampede AI',
@@ -71,9 +67,7 @@ export default function App() {
       {/* Protected admin routes */}
       <Route element={<RequireAdmin><AppLayout /></RequireAdmin>}>
         <Route path="/admin/dashboard"     element={<AdminDashboard />} />
-        {/* <Route path="/admin/crowd"         element={<CrowdMonitor />} /> */}
         <Route path="/admin/alerts"        element={<AlertManager />} />
-        <Route path="/admin/editor"        element={<StationEditor />} />
         <Route path="/admin/analytics"     element={<Analytics />} />
         <Route path="/admin/notifications" element={<AdminNotifications />} />
         <Route path="/admin/stampede"      element={<StampedeMonitor />} />

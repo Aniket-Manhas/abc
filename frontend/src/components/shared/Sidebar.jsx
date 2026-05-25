@@ -5,11 +5,9 @@ import { useSocket } from '../../contexts/SocketContext';
 // ── Admin navigation ──────────────────────────────────────────
 const ADMIN_NAV = [
   { to: '/admin/dashboard', icon: '📊', label: 'Overview' },
-  { to: '/admin/crowd', icon: '🔴', label: 'Crowd Monitor' },
   { to: '/admin/alerts', icon: '🚨', label: 'Alert Manager' },
   { to: '/admin/notifications', icon: '🔔', label: 'Notifications' },
   { to: '/admin/stampede', icon: '📹', label: 'Stampede AI', badge: 'AI' },
-  { to: '/admin/editor', icon: '🗺️', label: 'Station Editor' },
   { to: '/admin/analytics', icon: '📈', label: 'Analytics' },
 ];
 
