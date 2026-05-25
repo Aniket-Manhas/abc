@@ -61,6 +61,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 CAMERAS_FILE = "cameras.json"
 current_camera_index = 0
+# Only one live camera at a time — prevents spawning dozens of YOLO instances
+MAX_CONCURRENT_CAMERAS = 1
 
 # Camera manager will be initialized after the CameraManager class is defined
 camera_manager = None
@@ -97,6 +99,29 @@ def load_cameras():
 def save_cameras(cameras):
     with open(CAMERAS_FILE, "w") as f:
         json.dump(cameras, f, indent=4)
+
+
+def _camera_by_index(cameras, index):
+    """Resolve list index to camera config (supports non-sequential ids)."""
+    if not cameras:
+        return None
+    if 0 <= index < len(cameras):
+        return cameras[index]
+    return None
+
+
+def ensure_camera_running(cam_id, source, location, exclusive=True):
+    """
+    Start a camera on demand. By default stops other cameras so the server
+    stays responsive (one YOLO pipeline at a time).
+    """
+    if exclusive and MAX_CONCURRENT_CAMERAS == 1:
+        for other_id in list(camera_manager.cameras.keys()):
+            if other_id != cam_id:
+                camera_manager.remove_camera(other_id)
+    if camera_manager.get_camera(cam_id) is None:
+        camera_manager.add_camera(cam_id, source, location)
+    return camera_manager.get_camera(cam_id)
 
 
 # =============================================================================
@@ -419,7 +444,7 @@ class CameraManager:
                 self.cameras[camera_id].stop()
             
             try:
-                camera = VideoCamera(source)
+                camera = VideoCamera(source, camera_id=camera_id)
                 self.cameras[camera_id] = camera
                 self.camera_configs[camera_id] = {
                     "id": camera_id,
@@ -455,9 +480,10 @@ class CameraManager:
                         "total_persons": 0,
                         "max_risk_level": "SAFE",
                         "risk_score": 0.0,
-                        "stampede_cameras": [],  # [{"id": x, "location": y, "risk": z}]
+                        "stampede_cameras": [],
                         "high_risk_count": 0,
                         "danger_count": 0,
+                        "active_cameras": len(self.cameras),
                     }
                 }
             
@@ -594,10 +620,8 @@ camera_instance = None
 
 @app.route('/')
 def index():
+    """Local debug UI — cameras start lazily when you connect a feed."""
     cameras = load_cameras()
-    # Auto-start all cameras on startup
-    for cam in cameras:
-        camera_manager.add_camera(cam["id"], cam["source"], cam["location"])
     return render_template('index.html',
                            cameras=cameras,
                            current_cam_id=current_camera_index)
@@ -605,8 +629,10 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    global current_camera_index
+    global current_camera_index, camera_instance
     cameras = load_cameras()
+    if not cameras:
+        return jsonify({"error": "No cameras configured"}), 404
 
     cam_param = request.args.get('camera')
     if cam_param is not None:
@@ -620,18 +646,28 @@ def video_feed():
     if current_camera_index >= len(cameras):
         current_camera_index = 0
 
-    cam = cameras[current_camera_index]
+    cam = _camera_by_index(cameras, current_camera_index)
+    if cam is None:
+        return jsonify({"error": "Invalid camera index"}), 404
+
     cam_id = cam["id"]
     global_metrics["location"] = cam["location"]
 
-    # Get or create camera instance
-    camera_instance = camera_manager.get_camera(cam_id)
+    camera_instance = ensure_camera_running(
+        cam_id, cam["source"], cam["location"], exclusive=True
+    )
     if camera_instance is None:
-        camera_manager.add_camera(cam_id, cam["source"], cam["location"])
-        camera_instance = camera_manager.get_camera(cam_id)
+        return jsonify({"error": "Could not start camera"}), 503
 
-    return Response(gen(camera_instance),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(
+        gen(camera_instance),
+        mimetype='multipart/x-mixed-replace; boundary=frame',
+        headers={
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Connection': 'close',
+        },
+    )
 
 
 @app.route('/metrics')
@@ -671,12 +707,23 @@ def metrics_summary():
     })
 
 
+@app.route('/api/cameras')
+def api_cameras():
+    return jsonify(load_cameras())
+
+
 @app.route('/api/status')
 def api_status():
+    active_cam = None
+    if camera_manager.cameras:
+        active_cam = next(iter(camera_manager.cameras.values()))
     return jsonify({
-        "ok":          True,
-        "service":     "ai_crowd_density_monitor",
-        "p2pnet":      camera_instance.p2pnet.available if camera_instance else False,
+        "ok": True,
+        "service": "ai_crowd_density_monitor",
+        "p2pnet": active_cam.p2pnet.available if active_cam else False,
+        "active_cameras": len(camera_manager.cameras),
+        "cameras_configured": len(load_cameras()),
+        "current_camera_index": current_camera_index,
     })
 
 
@@ -685,36 +732,38 @@ def stream_status():
     """Server-Sent Events — emits full metrics JSON every second."""
     def event_gen():
         while True:
-            # Get aggregated metrics from all cameras
-            agg = camera_manager.get_aggregated_metrics()
-            
-            data = {
-                "status":             global_metrics.get("risk_level",     "SAFE"),
-                "persons":            global_metrics.get("person_count",   0),
-                "density_m2":         global_metrics.get("density_m2",     0.0),
-                "risk_score":         global_metrics.get("risk_score",     0.0),
-                "using_p2pnet":       global_metrics.get("using_p2pnet",  False),
-                "location":           global_metrics.get("location",       ""),
-                "alert_msg":          global_metrics.get("alert_msg",      ""),
-                "zone_data":          global_metrics.get("zone_data",      []),
-                "density_grid":       global_metrics.get("density_grid",   None),
-                "risk_score_grid":    global_metrics.get("risk_score_grid",None),
-                # Legacy keys — kept for backward compat with old frontend code
-                "high_risk_cells":    sum(
-                    1 for z in global_metrics.get("zone_data", [])
-                    if z.get("risk_level") in ("HIGH RISK",)
-                ),
-                "critical_risk_cells": sum(
-                    1 for z in global_metrics.get("zone_data", [])
-                    if z.get("risk_level") == "DANGER"
-                ),
-                # Multi-camera data
-                "total_persons_all":  agg["aggregated"]["total_persons"],
-                "max_risk_all":       agg["aggregated"]["max_risk_level"],
-                "stampede_cameras":   agg["aggregated"]["stampede_cameras"],
-                "active_cameras":     agg["aggregated"]["active_cameras"],
-            }
-            yield f"data: {json.dumps(data)}\n\n"
+            try:
+                agg = camera_manager.get_aggregated_metrics()
+                aggregated = agg.get("aggregated") or {}
+
+                data = {
+                    "status":             global_metrics.get("risk_level",     "SAFE"),
+                    "persons":            global_metrics.get("person_count",   0),
+                    "density_m2":         global_metrics.get("density_m2",     0.0),
+                    "risk_score":         global_metrics.get("risk_score",     0.0),
+                    "using_p2pnet":       global_metrics.get("using_p2pnet",  False),
+                    "location":           global_metrics.get("location",       ""),
+                    "alert_msg":          global_metrics.get("alert_msg",      ""),
+                    "zone_data":          global_metrics.get("zone_data",      []),
+                    "density_grid":       global_metrics.get("density_grid",   None),
+                    "risk_score_grid":    global_metrics.get("risk_score_grid",None),
+                    "high_risk_cells":    sum(
+                        1 for z in global_metrics.get("zone_data", [])
+                        if z.get("risk_level") in ("HIGH RISK",)
+                    ),
+                    "critical_risk_cells": sum(
+                        1 for z in global_metrics.get("zone_data", [])
+                        if z.get("risk_level") == "DANGER"
+                    ),
+                    "total_persons_all":  aggregated.get("total_persons", 0),
+                    "max_risk_all":       aggregated.get("max_risk_level", "SAFE"),
+                    "stampede_cameras":   aggregated.get("stampede_cameras", []),
+                    "active_cameras":     aggregated.get("active_cameras", len(camera_manager.cameras)),
+                }
+                yield f"data: {json.dumps(data)}\n\n"
+            except Exception as exc:
+                print(f"[stream_status] error: {exc}")
+                yield f"data: {json.dumps({'status': 'Stream error', 'persons': 0, 'density_m2': 0, 'risk_score': 0})}\n\n"
             time.sleep(1.0)
 
     return Response(event_gen(), mimetype='text/event-stream',
@@ -844,9 +893,8 @@ def update_settings():
     cameras.append({"id": new_id, "source": source, "location": location})
     save_cameras(cameras)
 
-    # Start the new camera in parallel
-    camera_manager.add_camera(new_id, source, location)
     current_camera_index = new_id
+    ensure_camera_running(new_id, source, location, exclusive=True)
 
     return jsonify({"success": True, "id": new_id})
 
@@ -857,9 +905,8 @@ def switch_camera(cam_id):
     cameras = load_cameras()
     if 0 <= cam_id < len(cameras):
         current_camera_index = cam_id
-        # Ensure camera is running
         cam = cameras[cam_id]
-        camera_manager.add_camera(cam["id"], cam["source"], cam["location"])
+        ensure_camera_running(cam["id"], cam["source"], cam["location"], exclusive=True)
         return jsonify({"success": True})
     return jsonify({"success": False})
 
@@ -1120,6 +1167,8 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static',    exist_ok=True)
     os.makedirs('uploads',   exist_ok=True)
-    # Port 5002 — matches VITE_STAMPEDE_URL in frontend/.env
-    app.run(host='0.0.0.0', port=5002, debug=True, threaded=True)
+    # debug/reloader off — avoids duplicate threads that break MJPEG + SSE clients
+    debug = os.environ.get('STAMPEDE_DEBUG', '').lower() in ('1', 'true', 'yes')
+    print('Sahyatri Crowd Monitor → http://127.0.0.1:5002  (admin UI uses this API)')
+    app.run(host='0.0.0.0', port=5002, debug=debug, threaded=True, use_reloader=False)
 

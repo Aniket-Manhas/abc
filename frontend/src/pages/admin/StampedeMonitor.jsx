@@ -164,6 +164,15 @@ function UploadTab() {
   );
 }
 
+function checkStampedeOnline() {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
+  return fetch(`${STAMPEDE_URL}/api/status`, { signal: ctrl.signal })
+    .then(r => r.ok)
+    .catch(() => false)
+    .finally(() => clearTimeout(t));
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function StampedeMonitor() {
   const [tab, setTab]             = useState('live');
@@ -172,58 +181,128 @@ export default function StampedeMonitor() {
   const [riskGrid, setRGrid]      = useState(null);
   const [history, setHistory]     = useState([]);
   const [online, setOnline]       = useState(null);
+  const [cameras, setCameras]     = useState([]);
   const [camIdx, setCamIdx]       = useState(0);
   const [streamKey, setStreamKey] = useState(0);
+  const [feedError, setFeedError] = useState(false);
   const esRef = useRef(null);
+  const sseRetryRef = useRef(null);
+  const camIdxRef = useRef(camIdx);
   const { reportCameraData } = useSocket();
 
-  // Server health check
+  camIdxRef.current = camIdx;
+
+  const refreshStream = () => {
+    setFeedError(false);
+    setStreamKey(k => k + 1);
+  };
+
+  // Load camera list + periodic health check
   useEffect(() => {
-    fetch(`${STAMPEDE_URL}/api/status`, { signal: AbortSignal.timeout(3000) })
-      .then(r => setOnline(r.ok))
-      .catch(() => setOnline(false));
+    let cancelled = false;
+
+    const poll = async () => {
+      const ok = await checkStampedeOnline();
+      if (cancelled) return;
+      setOnline(ok);
+      if (ok) {
+        try {
+          const res = await fetch(`${STAMPEDE_URL}/api/cameras`);
+          if (res.ok) {
+            const list = await res.json();
+            if (!cancelled && Array.isArray(list) && list.length) {
+              setCameras(list);
+            }
+          }
+        } catch (_) {}
+      }
+    };
+
+    poll();
+    const id = setInterval(poll, 12000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  // SSE connection
+  // SSE — single connection with reconnect (avoids piling connections on refresh)
   useEffect(() => {
-    if (tab !== 'live') return;
-    esRef.current?.close();
-    const es = new EventSource(`${STAMPEDE_URL}/stream_status`);
-    es.onmessage = (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        setSse({
-          status:            d.status || 'SAFE',
-          persons:           d.persons ?? 0,
-          density_m2:        d.density_m2 ?? 0,
-          risk_score:        d.risk_score ?? 0,
-          using_p2pnet:      d.using_p2pnet ?? false,
-          alert_msg:         d.alert_msg || '',
-          highRiskCells:     d.high_risk_cells ?? 0,
-          criticalRiskCells: d.critical_risk_cells ?? 0,
-        });
-        if (d.density_grid)    setDGrid(d.density_grid);
-        if (d.risk_score_grid) setRGrid(d.risk_score_grid);
-        setHistory(h => [
-          { time: new Date().toLocaleTimeString(), status: d.status, persons: d.persons ?? 0, density: d.density_m2 ?? 0 },
-          ...h.slice(0, 29)
-        ]);
+    if (tab !== 'live') {
+      esRef.current?.close();
+      esRef.current = null;
+      if (sseRetryRef.current) clearTimeout(sseRetryRef.current);
+      return undefined;
+    }
 
-        // Report to realtime server to populate the rest of the admin dashboard
-        if (d.status) {
-          reportCameraData({
-            nodeId: `camera_${camIdx}`,
-            nodeName: d.location || `Camera ${camIdx}`,
-            density: d.status === 'SAFE' ? 'low' : d.status === 'WARNING' ? 'medium' : 'high',
-            personCount: d.persons ?? 0
+    let cancelled = false;
+
+    const connect = () => {
+      if (cancelled) return;
+      esRef.current?.close();
+      const es = new EventSource(`${STAMPEDE_URL}/stream_status`);
+      esRef.current = es;
+
+      es.onopen = () => {
+        setOnline(true);
+        setSse(s => (s.status === 'Stream unavailable' ? { ...s, status: 'SAFE' } : s));
+      };
+
+      es.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          setSse({
+            status:            d.status || 'SAFE',
+            persons:           d.persons ?? 0,
+            density_m2:        d.density_m2 ?? 0,
+            risk_score:        d.risk_score ?? 0,
+            using_p2pnet:      d.using_p2pnet ?? false,
+            alert_msg:         d.alert_msg || '',
+            highRiskCells:     d.high_risk_cells ?? 0,
+            criticalRiskCells: d.critical_risk_cells ?? 0,
           });
+          if (d.density_grid)    setDGrid(d.density_grid);
+          if (d.risk_score_grid) setRGrid(d.risk_score_grid);
+          setHistory(h => [
+            { time: new Date().toLocaleTimeString(), status: d.status, persons: d.persons ?? 0, density: d.density_m2 ?? 0 },
+            ...h.slice(0, 29),
+          ]);
+
+          if (d.status && d.status !== 'Stream error') {
+            const idx = camIdxRef.current;
+            reportCameraData({
+              nodeId: `camera_${idx}`,
+              nodeName: d.location || `Camera ${idx}`,
+              density: d.status === 'SAFE' ? 'low' : d.status === 'WARNING' ? 'medium' : 'high',
+              personCount: d.persons ?? 0,
+            });
+          }
+        } catch (_) {}
+      };
+
+      es.onerror = () => {
+        es.close();
+        if (!cancelled) {
+          setSse(s => ({ ...s, status: 'Reconnecting…' }));
+          sseRetryRef.current = setTimeout(connect, 2500);
         }
-      } catch (_) {}
+      };
     };
-    es.onerror = () => setSse(s => ({ ...s, status: 'Stream unavailable' }));
-    esRef.current = es;
-    return () => es.close();
-  }, [tab, streamKey]);
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (sseRetryRef.current) clearTimeout(sseRetryRef.current);
+      esRef.current?.close();
+      esRef.current = null;
+    };
+  }, [tab, reportCameraData]);
+
+  // Restart MJPEG when camera changes (server runs one camera at a time)
+  useEffect(() => {
+    if (tab !== 'live' || online !== true) return undefined;
+    refreshStream();
+    fetch(`${STAMPEDE_URL}/switch/${camIdx}`, { method: 'POST' }).catch(() => {});
+    return undefined;
+  }, [camIdx, tab, online]);
 
   const rc = getRisk(sse.status);
   const isHighAlert = rc.level >= 2;
@@ -292,14 +371,16 @@ export default function StampedeMonitor() {
               <div className="section-title">📷 Camera Feed</div>
               <div style={{ display:'flex', gap:'0.5rem', alignItems:'center' }}>
                 <select value={camIdx}
-                  onChange={e => { setCamIdx(+e.target.value); setStreamKey(k => k+1); }}
-                  className="input" style={{ padding:'0.3rem 0.5rem', fontSize:'0.8rem', width:'auto' }}>
-                  <option value={0}>Camera 0 (default)</option>
-                  <option value={1}>Camera 1</option>
-                  <option value={2}>Camera 2</option>
+                  onChange={e => setCamIdx(+e.target.value)}
+                  className="input" style={{ padding:'0.3rem 0.5rem', fontSize:'0.8rem', width:'auto', maxWidth:220 }}>
+                  {(cameras.length ? cameras : [{ id: 0, location: 'Camera 0' }]).map((cam, i) => (
+                    <option key={cam.id ?? i} value={i}>
+                      {cam.location || `Camera ${i}`}
+                    </option>
+                  ))}
                 </select>
                 <button className="btn btn-secondary" style={{ fontSize:'0.8rem', padding:'0.35rem 0.75rem' }}
-                  onClick={() => setStreamKey(k => k+1)}>🔄 Refresh</button>
+                  onClick={refreshStream}>🔄 Refresh</button>
               </div>
             </div>
             <div style={{ borderRadius:14, overflow:'hidden', border:`2px solid ${rc.border}`, background:'var(--bg-secondary)', position:'relative', aspectRatio:'16/9', transition:'border-color 0.4s' }}>
@@ -307,12 +388,21 @@ export default function StampedeMonitor() {
                 <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'0.5rem', color:'var(--text-muted)' }}>
                   <span style={{ fontSize:'3rem' }}>📵</span><span>Server offline</span>
                 </div>
+              ) : feedError ? (
+                <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'0.75rem', color:'var(--text-muted)', padding:'1rem' }}>
+                  <span style={{ fontSize:'2rem' }}>📵</span>
+                  <span>Feed unavailable — camera may be offline</span>
+                  <button type="button" className="btn btn-secondary" style={{ fontSize:'0.8rem' }} onClick={refreshStream}>🔄 Retry feed</button>
+                </div>
               ) : (
-                <img key={streamKey}
+                <img
+                  key={`${camIdx}-${streamKey}`}
                   src={`${STAMPEDE_URL}/video_feed?camera=${camIdx}&t=${streamKey}`}
                   alt="Live crowd density feed"
                   style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-                  onError={e => { e.target.style.display = 'none'; }} />
+                  onLoad={() => setFeedError(false)}
+                  onError={() => setFeedError(true)}
+                />
               )}
               <div style={{ position:'absolute', top:12, left:12, background:'rgba(192,57,43,0.9)', color:'#fff', borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', fontWeight:700, display:'flex', alignItems:'center', gap:'0.4rem' }}>
                 <span style={{ width:6, height:6, borderRadius:'50%', background:'#fff', animation:'pulse-dot 1s infinite' }} />LIVE
