@@ -2,8 +2,8 @@
 # app.py — AI Crowd Density Monitoring System  (Flask backend, port 5002)
 #
 # Hybrid pipeline:
-#   Sparse crowds  (<DENSE_THRESHOLD)  → YOLOv8  person detection
-#   Dense crowds   (≥DENSE_THRESHOLD)  → P2PNet  point-based crowd counting
+#   Sparse crowds  (< 10 persons)  → YOLOv8 on 640px preview
+#   Dense crowds   (≥ 10 persons)  → P2PNet on FULL frame (tiled if large)
 #
 # API endpoints (fully compatible with StampedeMonitor.jsx):
 #   GET  /video_feed?camera=N  — MJPEG stream with overlays
@@ -34,7 +34,7 @@ except ImportError:
 
 import config
 from modules.detection       import PersonDetector
-from modules.p2pnet_counter  import P2PNetCounter
+from modules.p2pnet_counter  import P2PNetCounter, get_load_status
 from modules.density         import DensityEstimator
 from modules.optical_flow    import OpticalFlowAnalyzer
 from modules.risk_assessment import RiskAssessor
@@ -266,10 +266,8 @@ class VideoCamera:
             )
 
             if use_p2pnet:
-                pts, p2p_count = self.p2pnet.count(proc_frame)
-                # Scale points back to original frame
-                if scale != 1.0:
-                    pts = [(int(x/scale), int(y/scale)) for (x, y) in pts]
+                # Full-resolution frame — NOT proc_frame (640px caused ~21 counts on dense crowds)
+                pts, p2p_count = self.p2pnet.count(frame)
                 self.last_p2pnet_pts = pts
                 self.last_count      = p2p_count
                 self.using_p2pnet    = True
@@ -721,9 +719,11 @@ def api_status():
         "ok": True,
         "service": "ai_crowd_density_monitor",
         "p2pnet": active_cam.p2pnet.available if active_cam else False,
+        "p2pnet_load": get_load_status(),
         "active_cameras": len(camera_manager.cameras),
         "cameras_configured": len(load_cameras()),
         "current_camera_index": current_camera_index,
+        "dense_threshold": config.DENSE_THRESHOLD,
     })
 
 
@@ -1016,9 +1016,7 @@ class VideoFileCamera:
             if (self.p2pnet.available and config.P2PNET_ENABLED and
                     (yolo_count >= config.DENSE_THRESHOLD or
                      self.p2pnet_counter >= config.P2PNET_INTERVAL)):
-                pts, p2p_count = self.p2pnet.count(proc_frame)
-                if scale != 1.0:
-                    pts = [(int(x/scale), int(y/scale)) for x, y in pts]
+                pts, p2p_count = self.p2pnet.count(frame)
                 self.last_p2pnet_pts = pts
                 self.using_p2pnet    = True
                 self.p2pnet_counter  = 0

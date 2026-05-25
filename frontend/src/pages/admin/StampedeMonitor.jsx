@@ -17,6 +17,103 @@ function getRisk(s) {
   return RISK_CONFIG[s] || { color: 'var(--text-muted)', bg: 'var(--bg-secondary)', border: 'var(--border)', icon: '⏳', label: s || '…', level: -1 };
 }
 
+// Alarm Audio System using Web Audio API
+class AlarmPlayer {
+  constructor() {
+    this.audioCtx = null;
+    this.osc = null;
+    this.lfo = null;
+    this.lfoGain = null;
+    this.mainGain = null;
+    this.isPlaying = false;
+  }
+
+  init() {
+    if (this.audioCtx) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      this.audioCtx = new AudioContextClass();
+    }
+  }
+
+  async resume() {
+    this.init();
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+      try {
+        await this.audioCtx.resume();
+      } catch (e) {
+        console.error('Failed to resume audio context', e);
+      }
+    }
+  }
+
+  start() {
+    this.init();
+    if (!this.audioCtx || this.isPlaying) return;
+
+    if (this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume();
+    }
+
+    try {
+      this.osc = this.audioCtx.createOscillator();
+      this.lfo = this.audioCtx.createOscillator();
+      this.lfoGain = this.audioCtx.createGain();
+      this.mainGain = this.audioCtx.createGain();
+
+      this.osc.type = 'sine';
+      this.osc.frequency.setValueAtTime(700, this.audioCtx.currentTime);
+
+      this.lfo.type = 'sine';
+      this.lfo.frequency.setValueAtTime(2.5, this.audioCtx.currentTime); // 2.5Hz modulation (sweeps)
+
+      this.lfoGain.gain.setValueAtTime(150, this.audioCtx.currentTime); // sweep range: 550Hz to 850Hz
+
+      this.mainGain.gain.setValueAtTime(0.15, this.audioCtx.currentTime); // comfortable volume
+
+      this.lfo.connect(this.lfoGain);
+      this.lfoGain.connect(this.osc.frequency);
+      this.osc.connect(this.mainGain);
+      this.mainGain.connect(this.audioCtx.destination);
+
+      this.osc.start();
+      this.lfo.start();
+      this.isPlaying = true;
+    } catch (e) {
+      console.error('Error playing alarm', e);
+    }
+  }
+
+  stop() {
+    if (!this.isPlaying) return;
+    try {
+      if (this.osc) {
+        this.osc.stop();
+        this.osc.disconnect();
+      }
+      if (this.lfo) {
+        this.lfo.stop();
+        this.lfo.disconnect();
+      }
+      if (this.lfoGain) {
+        this.lfoGain.disconnect();
+      }
+      if (this.mainGain) {
+        this.mainGain.disconnect();
+      }
+    } catch (e) {
+      console.error('Error stopping alarm', e);
+    }
+    this.osc = null;
+    this.lfo = null;
+    this.lfoGain = null;
+    this.mainGain = null;
+    this.isPlaying = false;
+  }
+}
+
+const alarm = new AlarmPlayer();
+
 // Density heatmap grid (shows p/m² per cell)
 function DensityGrid({ grid }) {
   if (!grid || !Array.isArray(grid)) {
@@ -98,65 +195,182 @@ function RiskBar({ score }) {
   );
 }
 
-// Upload / analyse tab
-function UploadTab() {
+// Upload / analyse tab — uses VideoFileCamera backend for frame-by-frame analysis
+function UploadTab({ soundEnabled, setUploadAlarmActive }) {
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState(null);
+  const [analysing, setAnalysing] = useState(false);
   const [err, setErr] = useState('');
+  const [metrics, setMetrics] = useState(null);
+  const [streamKey, setStreamKey] = useState(0);
   const ref = useRef();
+  const pollRef = useRef(null);
+
+  const rc = metrics ? getRisk(metrics.risk_level) : null;
+  const isHighAlert = rc && rc.level >= 2;
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  // Trigger alarm on high risk
+  useEffect(() => {
+    const play = isHighAlert && soundEnabled && analysing;
+    if (play) {
+      alarm.start();
+      setUploadAlarmActive?.(true);
+    } else {
+      alarm.stop();
+      setUploadAlarmActive?.(false);
+    }
+    return () => {
+      alarm.stop();
+      setUploadAlarmActive?.(false);
+    };
+  }, [isHighAlert, soundEnabled, analysing, setUploadAlarmActive]);
 
   const run = async () => {
     if (!file) return;
-    setBusy(true); setErr(''); setResult(null);
+    setBusy(true); setErr(''); setMetrics(null); setAnalysing(false);
+
     const fd = new FormData();
-    fd.append('media', file);
+    fd.append('video', file);
     try {
-      const res  = await fetch(`${STAMPEDE_URL}/upload_media`, { method: 'POST', body: fd });
+      const res = await fetch(`${STAMPEDE_URL}/load_video`, { method: 'POST', body: fd });
       const data = await res.json();
-      setResult(data);
+      if (data.error) {
+        setErr(data.error);
+        setBusy(false);
+        return;
+      }
+      // Video loaded — start streaming + polling metrics
+      setAnalysing(true);
+      setStreamKey(k => k + 1);
+
+      // Poll /file_metrics every 500ms for real-time frame-by-frame data
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = setInterval(async () => {
+        try {
+          const mRes = await fetch(`${STAMPEDE_URL}/file_metrics`);
+          if (mRes.ok) {
+            const m = await mRes.json();
+            setMetrics(m);
+          }
+        } catch { /* ignore polling errors */ }
+      }, 500);
+
     } catch {
       setErr('Upload failed — is the crowd monitor server running on port 5002?');
     } finally { setBusy(false); }
   };
 
-  const rc = result ? getRisk(result.prediction_status) : null;
+  const stopAnalysis = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    setAnalysing(false);
+  };
+
+  const progress = metrics && metrics.total_frames > 0
+    ? Math.min(100, (metrics.frame_no / metrics.total_frames) * 100)
+    : 0;
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.25rem' }}>
+      {/* File picker */}
       <div onClick={() => ref.current?.click()}
         style={{ border:`2px dashed ${file ? 'var(--accent-blue)' : 'var(--border-bright)'}`, borderRadius:14, padding:'2rem', textAlign:'center', cursor:'pointer', background: file ? 'rgba(59,130,246,0.05)' : 'var(--bg-secondary)', transition:'var(--transition)' }}>
         <div style={{ fontSize:'2.5rem', marginBottom:'0.5rem' }}>{file ? '📁' : '📤'}</div>
-        <div style={{ fontWeight:600, marginBottom:'0.25rem' }}>{file ? file.name : 'Click to upload image or video'}</div>
-        <div style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>Supports MP4, AVI, MOV, JPG, PNG</div>
-        <input ref={ref} type="file" accept="video/*,image/*" style={{ display:'none' }} onChange={e => { setFile(e.target.files[0]); setResult(null); }} />
+        <div style={{ fontWeight:600, marginBottom:'0.25rem' }}>{file ? file.name : 'Click to upload video'}</div>
+        <div style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>Supports MP4, AVI, MOV</div>
+        <input ref={ref} type="file" accept="video/*" style={{ display:'none' }} onChange={e => {
+          setFile(e.target.files[0]); setMetrics(null); setAnalysing(false);
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        }} />
       </div>
 
-      <button className="btn btn-primary" onClick={run} disabled={!file || busy} style={{ width:'100%' }}>
-        {busy ? '⏳ Analysing…' : '🔬 Run Crowd Density Analysis'}
-      </button>
+      <div style={{ display:'flex', gap:'0.5rem' }}>
+        <button className="btn btn-primary" onClick={run} disabled={!file || busy} style={{ flex:1 }}>
+          {busy ? '⏳ Uploading…' : '🔬 Analyse Frame-by-Frame'}
+        </button>
+        {analysing && (
+          <button className="btn btn-secondary" onClick={stopAnalysis} style={{ flexShrink:0 }}>
+            ⏹ Stop
+          </button>
+        )}
+      </div>
 
       {err && <div style={{ background:'rgba(231,76,60,0.1)', border:'1px solid rgba(231,76,60,0.3)', borderRadius:10, padding:'0.75rem 1rem', fontSize:'0.85rem', color:'#e74c3c' }}>{err}</div>}
 
-      {result && rc && (
+      {/* Live annotated video stream */}
+      {analysing && (
+        <div>
+          <div className="section-title" style={{ marginBottom:'0.5rem' }}>🎬 Frame-by-Frame Analysis</div>
+          <div style={{ borderRadius:14, overflow:'hidden', border:`2px solid ${rc ? rc.border : 'var(--border)'}`, background:'var(--bg-secondary)', position:'relative', transition:'border-color 0.4s' }}>
+            <img
+              key={streamKey}
+              src={`${STAMPEDE_URL}/file_feed?t=${streamKey}`}
+              alt="Video analysis feed"
+              style={{ width:'100%', display:'block' }}
+            />
+            <div style={{ position:'absolute', top:12, left:12, background:'rgba(59,130,246,0.9)', color:'#fff', borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', fontWeight:700, display:'flex', alignItems:'center', gap:'0.4rem' }}>
+              <span style={{ width:6, height:6, borderRadius:'50%', background:'#fff', animation:'pulse-dot 1s infinite' }} />ANALYSING
+            </div>
+            {metrics?.using_p2pnet && (
+              <div style={{ position:'absolute', top:12, right:12, background:'rgba(59,130,246,0.9)', color:'#fff', borderRadius:6, padding:'2px 8px', fontSize:'0.68rem', fontWeight:700 }}>P2PNet</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {analysing && metrics && (
+        <div>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:'0.72rem', color:'var(--text-muted)', marginBottom:4 }}>
+            <span>Frame {metrics.frame_no || 0} / {metrics.total_frames || '?'}</span>
+            <span style={{ fontWeight:600 }}>{progress.toFixed(1)}%</span>
+          </div>
+          <div style={{ height:6, borderRadius:3, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${progress}%`, background:'var(--accent-blue, #3b82f6)', borderRadius:3, transition:'width 0.3s ease' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Live metrics panel */}
+      {metrics && rc && (
         <div style={{ background:rc.bg, border:`1px solid ${rc.border}`, borderRadius:12, padding:'1.25rem' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'1rem' }}>
             <span style={{ fontSize:'1.8rem' }}>{rc.icon}</span>
             <div>
-              <div style={{ fontWeight:700, fontSize:'1.1rem', color:rc.color }}>{result.prediction_status}</div>
-              <div style={{ fontSize:'0.75rem', color:'var(--text-muted)' }}>Analysis complete</div>
+              <div style={{ fontWeight:700, fontSize:'1.1rem', color:rc.color }}>{metrics.risk_level}</div>
+              <div style={{ fontSize:'0.75rem', color:'var(--text-muted)' }}>{metrics.alert_msg || (analysing ? 'Analysing…' : 'Analysis complete')}</div>
             </div>
           </div>
           <div style={{ display:'flex', gap:'2rem', fontSize:'0.875rem', flexWrap:'wrap' }}>
-            <div><div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Persons</div>
-              <div style={{ fontWeight:800, color:rc.color, fontSize:'1.5rem' }}>{result.max_persons}</div></div>
-            <div><div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Density</div>
-              <div style={{ fontWeight:700, fontSize:'1rem', color:rc.color }}>{result.density_m2} p/m²</div></div>
-            <div><div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Time</div>
-              <div style={{ fontWeight:700, fontSize:'1rem' }}>{result.processing_time}s</div></div>
-            {result.using_p2pnet && <div style={{ alignSelf:'center' }}>
+            <div>
+              <div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Current Persons</div>
+              <div style={{ fontWeight:800, color:rc.color, fontSize:'1.5rem' }}>{metrics.person_count}</div>
+            </div>
+            <div>
+              <div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Peak Count</div>
+              <div style={{ fontWeight:800, color:rc.color, fontSize:'1.3rem' }}>{metrics.peak_count}</div>
+            </div>
+            <div>
+              <div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Density</div>
+              <div style={{ fontWeight:700, fontSize:'1rem', color:rc.color }}>{metrics.density_m2} p/m²</div>
+            </div>
+            <div>
+              <div style={{ color:'var(--text-muted)', fontSize:'0.7rem', textTransform:'uppercase', marginBottom:2 }}>Risk Score</div>
+              <div style={{ fontWeight:700, fontSize:'1rem', color:rc.color }}>{Number(metrics.risk_score || 0).toFixed(1)}/100</div>
+            </div>
+            {metrics.using_p2pnet && <div style={{ alignSelf:'center' }}>
               <span style={{ background:'rgba(59,130,246,0.15)', border:'1px solid rgba(59,130,246,0.4)', borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', color:'#3b82f6', fontWeight:700 }}>P2PNet</span>
             </div>}
+          </div>
+          {/* Risk bar */}
+          <div style={{ marginTop:'1rem' }}>
+            <RiskBar score={metrics.risk_score} />
           </div>
         </div>
       )}
@@ -177,6 +391,21 @@ function checkStampedeOnline() {
 export default function StampedeMonitor() {
   const [tab, setTab]             = useState('live');
   const [sse, setSse]             = useState({ status: 'SAFE', persons: 0, density_m2: 0, risk_score: 0, highRiskCells: 0, criticalRiskCells: 0, using_p2pnet: false, alert_msg: '' });
+  const [soundEnabled, setSoundEnabled]           = useState(true);
+  const [uploadAlarmActive, setUploadAlarmActive] = useState(false);
+
+  // Resume AudioContext on any user interaction to bypass autoplay restrictions
+  useEffect(() => {
+    const resumeAudio = () => {
+      alarm.resume();
+    };
+    window.addEventListener('click', resumeAudio);
+    window.addEventListener('keydown', resumeAudio);
+    return () => {
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('keydown', resumeAudio);
+    };
+  }, []);
   const [densityGrid, setDGrid]   = useState(null);
   const [riskGrid, setRGrid]      = useState(null);
   const [history, setHistory]     = useState([]);
@@ -307,8 +536,29 @@ export default function StampedeMonitor() {
   const rc = getRisk(sse.status);
   const isHighAlert = rc.level >= 2;
 
+  const isAlarmActive = soundEnabled && (
+    tab === 'live' ? (isHighAlert && online) : (tab === 'upload' ? uploadAlarmActive : false)
+  );
+
+  useEffect(() => {
+    if (tab === 'live' && isHighAlert && soundEnabled && online) {
+      alarm.start();
+    } else {
+      alarm.stop();
+    }
+    return () => {
+      alarm.stop();
+    };
+  }, [tab, isHighAlert, soundEnabled, online]);
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem' }}>
+      <style>{`
+        @keyframes pulse-alarm {
+          0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+          100% { box-shadow: 0 0 0 8px rgba(231, 76, 60, 0); }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:'1rem' }}>
         <div>
@@ -321,6 +571,32 @@ export default function StampedeMonitor() {
               ⚡ P2PNet Active
             </span>
           )}
+          <button 
+            onClick={() => {
+              setSoundEnabled(!soundEnabled);
+              alarm.resume();
+            }}
+            style={{ 
+              display:'flex', 
+              alignItems:'center', 
+              gap:'0.5rem', 
+              padding:'0.4rem 0.875rem', 
+              borderRadius:20,
+              background: isAlarmActive ? 'rgba(231,76,60,0.15)' : (soundEnabled ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)'),
+              border: `1px solid ${isAlarmActive ? '#e74c3c' : (soundEnabled ? 'rgba(59,130,246,0.3)' : 'var(--border)')}`,
+              fontSize:'0.8rem', 
+              fontWeight:600,
+              color: isAlarmActive ? '#e74c3c' : (soundEnabled ? '#3b82f6' : 'var(--text-muted)'),
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              animation: isAlarmActive ? 'pulse-alarm 1.2s infinite alternate' : 'none'
+            }}
+            title={soundEnabled ? 'Mute emergency alarm' : 'Unmute emergency alarm'}
+          >
+            <span style={{ fontSize: '0.9rem' }}>{soundEnabled ? '🔊' : '🔇'}</span>
+            <span>{soundEnabled ? 'Alarm On' : 'Alarm Muted'}</span>
+          </button>
           <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', padding:'0.4rem 0.875rem', borderRadius:20,
             background: online === null ? 'var(--bg-secondary)' : online ? 'rgba(39,174,96,0.1)' : 'rgba(231,76,60,0.1)',
             border:`1px solid ${online === null ? 'var(--border)' : online ? 'rgba(39,174,96,0.3)' : 'rgba(231,76,60,0.3)'}`,
@@ -477,8 +753,8 @@ export default function StampedeMonitor() {
 
       {/* ── UPLOAD TAB ─────────────────────────────────────────────────────── */}
       {tab === 'upload' && (
-        <div style={{ maxWidth:640 }}>
-          <UploadTab />
+        <div style={{ maxWidth:960 }}>
+          <UploadTab soundEnabled={soundEnabled} setUploadAlarmActive={setUploadAlarmActive} />
         </div>
       )}
 

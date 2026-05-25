@@ -2,12 +2,40 @@ let audioCtx = null;
 let currentOscillator = null;
 let currentInterval = null;
 
+export const unlockAudio = () => {
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(e => console.log('Audio resume failed', e));
+    }
+    return;
+  }
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Play a silent buffer to fully unlock on iOS/Safari/Chrome
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+    console.log('AudioContext successfully unlocked');
+  } catch (e) {
+    console.log('Audio context creation failed during unlock', e);
+  }
+};
+
 export const playAlertBeep = () => {
   if (currentInterval) return; // already playing
   try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(e => console.warn('Failed to resume audioCtx:', e));
+    }
     
     const playSiren = () => {
+      if (!audioCtx || audioCtx.state === 'closed') return;
+      
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
 
@@ -43,8 +71,8 @@ export const stopAlertBeep = () => {
     try { currentOscillator.stop(); } catch (e) {}
     currentOscillator = null;
   }
-  if (audioCtx && audioCtx.state !== 'closed') {
-    try { audioCtx.close(); } catch (e) {}
-    audioCtx = null;
-  }
+  // NOTE: We deliberately do NOT close the audioCtx here.
+  // Keeping the audioCtx alive ensures that once it is unlocked by a user gesture,
+  // future plays (triggered asynchronously by sockets) will succeed without being blocked.
 };
+
