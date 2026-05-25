@@ -1,0 +1,3046 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "luggage scannong"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88016359262144,
+              32.70541058586697
+            ],
+            [
+              74.88023423144014,
+              32.70543435666505
+            ],
+            [
+              74.88019931476197,
+              32.70551335968396
+            ],
+            [
+              74.88012693727424,
+              32.70548904481544
+            ],
+            [
+              74.88016359262144,
+              32.70541058586697
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "toilet gents"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88061125450864,
+              32.704726951770894
+            ],
+            [
+              74.88052270360879,
+              32.70491520036509
+            ],
+            [
+              74.88042733756737,
+              32.70487877049732
+            ],
+            [
+              74.88051454318312,
+              32.70468958417942
+            ],
+            [
+              74.88061125450864,
+              32.704726951770894
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "parcel office"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88023686948438,
+              32.70442753003819
+            ],
+            [
+              74.88035136509242,
+              32.704469801359195
+            ],
+            [
+              74.88025512973249,
+              32.704678577535674
+            ],
+            [
+              74.88013620983997,
+              32.70463807262023
+            ],
+            [
+              74.88023686948438,
+              32.70442753003819
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "parcel enquiry"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88035246800894,
+              32.704468185970754
+            ],
+            [
+              74.88044044507885,
+              32.704504451405825
+            ],
+            [
+              74.88034128694474,
+              32.70470113807876
+            ],
+            [
+              74.8802550590818,
+              32.704680545839096
+            ],
+            [
+              74.88035246800894,
+              32.704468185970754
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "booking office"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.8801095518019,
+              32.70488944378343
+            ],
+            [
+              74.88022381246978,
+              32.704928965992565
+            ],
+            [
+              74.88016678053876,
+              32.70506418844285
+            ],
+            [
+              74.8800424142463,
+              32.70502359751461
+            ],
+            [
+              74.8801095518019,
+              32.70488944378343
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "boundary",
+        "name": "admin"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88080662339766,
+              32.70432241374735
+            ],
+            [
+              74.87933080612709,
+              32.707424908463636
+            ],
+            [
+              74.87904333879214,
+              32.70730638640008
+            ],
+            [
+              74.87894375357207,
+              32.70714509210801
+            ],
+            [
+              74.87890607205381,
+              32.706927942686406
+            ],
+            [
+              74.87898856160899,
+              32.70656843093818
+            ],
+            [
+              74.8799174238635,
+              32.70459256823766
+            ],
+            [
+              74.88012666907201,
+              32.704378795582485
+            ],
+            [
+              74.88036381775407,
+              32.704285247302735
+            ],
+            [
+              74.88053248682579,
+              32.70427191830595
+            ],
+            [
+              74.88067941673327,
+              32.704275771829515
+            ],
+            [
+              74.88080662339766,
+              32.70432241374735
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 5
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "reservation counter"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88013576386115,
+              32.704637144807776
+            ],
+            [
+              74.8802122819528,
+              32.70466657810154
+            ],
+            [
+              74.88011326465508,
+              32.70489288511395
+            ],
+            [
+              74.88002612447201,
+              32.70485775550708
+            ],
+            [
+              74.88013576386115,
+              32.704637144807776
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "enquiry"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88002612447201,
+              32.70485775550708
+            ],
+            [
+              74.8801141579612,
+              32.70489094715384
+            ],
+            [
+              74.88004791371168,
+              32.705023162925485
+            ],
+            [
+              74.87996359307567,
+              32.704993412654545
+            ],
+            [
+              74.88002612447201,
+              32.70485775550708
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 7
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "general waiting hall"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87985552545538,
+              32.705242281228124
+            ],
+            [
+              74.88001683922832,
+              32.705294930961685
+            ],
+            [
+              74.87984071672247,
+              32.70565586144778
+            ],
+            [
+              74.87968721778645,
+              32.70559755830246
+            ],
+            [
+              74.87985552545538,
+              32.705242281228124
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 8
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "ac waiting hall"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87947901898914,
+              32.705890588580786
+            ],
+            [
+              74.87965301189502,
+              32.70596788654123
+            ],
+            [
+              74.879486751012,
+              32.706307420592964
+            ],
+            [
+              74.87931535196537,
+              32.70623507156269
+            ],
+            [
+              74.87947901898914,
+              32.705890588580786
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 9
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "vip lounge"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.8792212301143,
+              32.70647098571932
+            ],
+            [
+              74.87928643566843,
+              32.706488165254356
+            ],
+            [
+              74.87918617584171,
+              32.706705667311994
+            ],
+            [
+              74.87912002003156,
+              32.70667997360415
+            ],
+            [
+              74.8792212301143,
+              32.70647098571932
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "retiring room"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87928807927165,
+              32.70648459964271
+            ],
+            [
+              74.87936954133193,
+              32.70651939105477
+            ],
+            [
+              74.87926175683396,
+              32.70674264123396
+            ],
+            [
+              74.87918781944487,
+              32.70670210170904
+            ],
+            [
+              74.87928807927165,
+              32.70648459964271
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "duty office"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88042640477983,
+              32.704879044213385
+            ],
+            [
+              74.88052357137516,
+              32.70491617554539
+            ],
+            [
+              74.88047711325737,
+              32.705016892265675
+            ],
+            [
+              74.88038096006028,
+              32.70497763310047
+            ],
+            [
+              74.88042640477983,
+              32.704879044213385
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "security check"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88026887203719,
+              32.705180534891866
+            ],
+            [
+              74.88034274776683,
+              32.70520464656521
+            ],
+            [
+              74.88023717853056,
+              32.705433670049985
+            ],
+            [
+              74.88016330280087,
+              32.705409558438475
+            ],
+            [
+              74.88026887203719,
+              32.705180534891866
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 13
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "food court"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88012519858628,
+              32.70548850068086
+            ],
+            [
+              74.88019912529612,
+              32.70551340358713
+            ],
+            [
+              74.87997029038846,
+              32.70600311983192
+            ],
+            [
+              74.87989938247284,
+              32.70597387619203
+            ],
+            [
+              74.88012519858628,
+              32.70548850068086
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 14
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "inquiry office"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87983464449434,
+              32.7061189273831
+            ],
+            [
+              74.87991433421593,
+              32.70614819644756
+            ],
+            [
+              74.87982523028396,
+              32.70634980377713
+            ],
+            [
+              74.87974553887742,
+              32.7063205373785
+            ],
+            [
+              74.87983464449434,
+              32.7061189273831
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 15
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "toilet female"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87974195172615,
+              32.70632131965357
+            ],
+            [
+              74.87982226326042,
+              32.706350695168126
+            ],
+            [
+              74.87976675790117,
+              32.70646487099191
+            ],
+            [
+              74.8796880939538,
+              32.706431767703265
+            ],
+            [
+              74.87974195172615,
+              32.70632131965357
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 16
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "toilet divyang"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87968556413585,
+              32.70643178621491
+            ],
+            [
+              74.87976422817675,
+              32.706464889485076
+            ],
+            [
+              74.8797059951747,
+              32.70659094175687
+            ],
+            [
+              74.8796256835482,
+              32.7065615663393
+            ],
+            [
+              74.87968556413585,
+              32.70643178621491
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 17
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "boundary",
+        "name": "admin"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88072882442395,
+              32.704582156039294
+            ],
+            [
+              74.88079045975684,
+              32.704603110507534
+            ],
+            [
+              74.87945491972292,
+              32.70737450781036
+            ],
+            [
+              74.87938917536664,
+              32.707352157071966
+            ],
+            [
+              74.88072882442395,
+              32.704582156039294
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 18
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "waiting area"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88060583508673,
+              32.70482927920638
+            ],
+            [
+              74.88067169043705,
+              32.704840750209044
+            ],
+            [
+              74.88044238733866,
+              32.70532507410803
+            ],
+            [
+              74.88038050336277,
+              32.70529857625479
+            ],
+            [
+              74.88060583508673,
+              32.70482927920638
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 19
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "drinking water"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88034144393546,
+              32.70547451419836
+            ],
+            [
+              74.88036606000449,
+              32.70548358949398
+            ],
+            [
+              74.88027130161959,
+              32.70568025030178
+            ],
+            [
+              74.8802468046116,
+              32.70567161783487
+            ],
+            [
+              74.88034144393546,
+              32.70547451419836
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 20
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "drinking water"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.87994152522577,
+              32.70636228186248
+            ],
+            [
+              74.87983745561766,
+              32.70657788826526
+            ],
+            [
+              74.87981225339104,
+              32.70656463294155
+            ],
+            [
+              74.87991211022148,
+              32.70635168791276
+            ],
+            [
+              74.87994152522577,
+              32.70636228186248
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 21
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "room",
+        "name": "waiting room"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.879645372503,
+              32.70681974068215
+            ],
+            [
+              74.87970986709428,
+              32.70684465135224
+            ],
+            [
+              74.87952464055945,
+              32.707223619021875
+            ],
+            [
+              74.87946187057736,
+              32.707201332073595
+            ],
+            [
+              74.879645372503,
+              32.70681974068215
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 22
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "boundary",
+        "name": "admin"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88080467554758,
+              32.70497467209128
+            ],
+            [
+              74.88089840070961,
+              32.70500653615437
+            ],
+            [
+              74.87974813201416,
+              32.70735891401267
+            ],
+            [
+              74.87967938225998,
+              32.70733991000964
+            ],
+            [
+              74.88080467554758,
+              32.70497467209128
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 23
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_parcel_office"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88019047253334,
+          32.704524494285025
+        ],
+        "type": "Point"
+      },
+      "id": 24
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_parcel_enquiry"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88034780226295,
+          32.70468791296024
+        ],
+        "type": "Point"
+      },
+      "id": 25
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_reservation_counter"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88016469466149,
+          32.70477504786511
+        ],
+        "type": "Point"
+      },
+      "id": 26
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_booking_office"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88018405037349,
+          32.70502297801788
+        ],
+        "type": "Point"
+      },
+      "id": 27
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_enquiry"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87997954052656,
+          32.704999035357815
+        ],
+        "type": "Point"
+      },
+      "id": 28
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_general_waiting_hall_a"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87991968221351,
+          32.705263005519456
+        ],
+        "type": "Point"
+      },
+      "id": 29
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_general_waiting_hall_b"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87972302894414,
+          32.70561099143602
+        ],
+        "type": "Point"
+      },
+      "id": 30
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_ac_waiting_hall"
+      },
+      "geometry": {
+        "coordinates": [
+          74.879521002459,
+          32.70623754089165
+        ],
+        "type": "Point"
+      },
+      "id": 31
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_vip_lounge"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87913549315184,
+          32.70668585033421
+        ],
+        "type": "Point"
+      },
+      "id": 32
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_retiring_room"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87936091641197,
+          32.706536713401405
+        ],
+        "type": "Point"
+      },
+      "id": 33
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_divyang_toilet"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87965379677235,
+          32.706500377615384
+        ],
+        "type": "Point"
+      },
+      "id": 34
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_ladies_toilet"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87972166920338,
+          32.706362708779295
+        ],
+        "type": "Point"
+      },
+      "id": 35
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_inquiry_office"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87982363884115,
+          32.70614363959493
+        ],
+        "type": "Point"
+      },
+      "id": 36
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_food_court"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87999179125359,
+          32.70577448797928
+        ],
+        "type": "Point"
+      },
+      "id": 37
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_luggage_scanning"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88014529214857,
+          32.70544958425357
+        ],
+        "type": "Point"
+      },
+      "id": 38
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_security_check_a"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88018844080221,
+          32.70535438245061
+        ],
+        "type": "Point"
+      },
+      "id": 39
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_security_check_b"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88025538475969,
+          32.70539413972155
+        ],
+        "type": "Point"
+      },
+      "id": 40
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_duty_office"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88039047874202,
+          32.70495639154353
+        ],
+        "type": "Point"
+      },
+      "id": 41
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_toilet_gents"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88045071801719,
+          32.7048292404571
+        ],
+        "type": "Point"
+      },
+      "id": 42
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_waiting_area_a"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88041880585541,
+          32.705314759708884
+        ],
+        "type": "Point"
+      },
+      "id": 43
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_drinking_water_a"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88028420410049,
+          32.70559379251553
+        ],
+        "type": "Point"
+      },
+      "id": 44
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_drinking_water_b"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87986292767928,
+          32.7064562970272
+        ],
+        "type": "Point"
+      },
+      "id": 45
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "entrance_exit_waiting_area_b"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87968996903925,
+          32.70683705918219
+        ],
+        "type": "Point"
+      },
+      "id": 46
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "boundary",
+        "name": "over_bridge"
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              74.88018185500741,
+              32.70585268765632
+            ],
+            [
+              74.88013968970978,
+              32.70593625043689
+            ],
+            [
+              74.88035136022921,
+              32.706004763433654
+            ],
+            [
+              74.88038842053703,
+              32.7059388449389
+            ],
+            [
+              74.88043074290624,
+              32.70595209532421
+            ],
+            [
+              74.88034201446246,
+              32.70612562151409
+            ],
+            [
+              74.88030644438453,
+              32.70611239084721
+            ],
+            [
+              74.88033212551096,
+              32.706039190041025
+            ],
+            [
+              74.88012761516683,
+              32.70596283507956
+            ],
+            [
+              74.88007382163244,
+              32.70607768585353
+            ],
+            [
+              74.88004010699072,
+              32.706066223910426
+            ],
+            [
+              74.88014418293346,
+              32.70584101821753
+            ],
+            [
+              74.88018185500741,
+              32.70585268765632
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "id": 47
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "platform",
+        "name": "platform_1"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88020902510198,
+          32.70576664931484
+        ],
+        "type": "Point"
+      },
+      "id": 48
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "platform",
+        "name": "platform_2"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87999482609453,
+          32.70619851293404
+        ],
+        "type": "Point"
+      },
+      "id": 49
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "platform",
+        "name": "platform_3"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88056490190951,
+          32.705589004671836
+        ],
+        "type": "Point"
+      },
+      "id": 50
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "platform",
+        "name": "platform_4"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87994018112454,
+          32.706872027398106
+        ],
+        "type": "Point"
+      },
+      "id": 51
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "door",
+        "name": "station_entrance_exit",
+        "buildingEntrance": true,
+        "accessLabel": "Station Entrance / Exit",
+        "accessKind": "both"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87941401697302,
+          32.705675091510784
+        ],
+        "type": "Point"
+      },
+      "id": 52
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_1"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87950367065409,
+          32.70570864849198
+        ],
+        "type": "Point"
+      },
+      "id": 53
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_2"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87922457412992,
+          32.70631939151659
+        ],
+        "type": "Point"
+      },
+      "id": 54
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_3"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87900471091635,
+          32.70674425749468
+        ],
+        "type": "Point"
+      },
+      "id": 55
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_4"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87928733825208,
+          32.70691369255627
+        ],
+        "type": "Point"
+      },
+      "id": 56
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_5"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87949399007744,
+          32.70644612525359
+        ],
+        "type": "Point"
+      },
+      "id": 57
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_6"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87981691330046,
+          32.70586066842368
+        ],
+        "type": "Point"
+      },
+      "id": 58
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_7"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88015770628198,
+          32.705203663074045
+        ],
+        "type": "Point"
+      },
+      "id": 59
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_8"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88035436761464,
+          32.7048389675701
+        ],
+        "type": "Point"
+      },
+      "id": 60
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_9"
+      },
+      "geometry": {
+        "coordinates": [
+          74.87980806542072,
+          32.70508705312699
+        ],
+        "type": "Point"
+      },
+      "id": 61
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_10"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88022969638473,
+          32.704372983447996
+        ],
+        "type": "Point"
+      },
+      "id": 62
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_11"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88056812738355,
+          32.70444253960355
+        ],
+        "type": "Point"
+      },
+      "id": 63
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_1"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88006203517702,
+          32.70607284861266
+        ],
+        "type": "Point"
+      },
+      "id": 64
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_1_end"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88011578048167,
+          32.70594343217371
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_2"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88032088790672,
+          32.706119956812316
+        ],
+        "type": "Point"
+      },
+      "id": 66
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_3"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88041172533829,
+          32.7059430726721
+        ],
+        "type": "Point"
+      },
+      "id": 67
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_4"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88016318370177,
+          32.70584398963399
+        ],
+        "type": "Point"
+      },
+      "id": 68
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_2_end"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88035866778125,
+          32.70602827553394
+        ],
+        "type": "Point"
+      },
+      "id": 69
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_3_end"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88035438884899,
+          32.70602693651114
+        ],
+        "type": "Point"
+      },
+      "id": 70
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "stair",
+        "accessible": false,
+        "name": "stair_4_end"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88011505702042,
+          32.70594276113502
+        ],
+        "type": "Point"
+      },
+      "id": 71
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "egress_edge",
+        "from": "station_entrance_exit",
+        "to": "junction_1",
+        "edgeType": "egress",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87941408628447,
+            32.705674812920606
+          ],
+          [
+            74.87950485363672,
+            32.70570895151519
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_1",
+        "to": "junction_9",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8795035750629,
+            32.705708284915076
+          ],
+          [
+            74.87980828580203,
+            32.70508694447135
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_1",
+        "to": "junction_6",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87950355372541,
+            32.705708366072884
+          ],
+          [
+            74.87981703836547,
+            32.70586073907357
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_1",
+        "to": "junction_2",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87950351255887,
+            32.70570839188812
+          ],
+          [
+            74.87922449227099,
+            32.7063193037779
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_9",
+        "to": "junction_10",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87980812404606,
+            32.705086979179825
+          ],
+          [
+            74.8802298930876,
+            32.70437284188952
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_10",
+        "to": "junction_11",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88022996279554,
+            32.70437300922001
+          ],
+          [
+            74.88056838516823,
+            32.704442662658096
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_11",
+        "to": "junction_8",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88056842433951,
+            32.70444269843908
+          ],
+          [
+            74.8803546827701,
+            32.704838814421805
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_8",
+        "to": "junction_7",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8803547752249,
+            32.70483887344494
+          ],
+          [
+            74.88015791554159,
+            32.705203586067626
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_9",
+        "to": "junction_7",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87980834695907,
+            32.70508705049737
+          ],
+          [
+            74.8801578027199,
+            32.705203684559095
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_7",
+        "to": "junction_6",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88015802603908,
+            32.705203815920655
+          ],
+          [
+            74.87981669359067,
+            32.70586072145491
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_6",
+        "to": "junction_5",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87981699492508,
+            32.705860607250955
+          ],
+          [
+            74.87949376945278,
+            32.70644610694151
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_2",
+        "to": "junction_5",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87922458365477,
+            32.70631945604154
+          ],
+          [
+            74.87949399963438,
+            32.70644633539014
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_2",
+        "to": "junction_3",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8792247126276,
+            32.706319392536685
+          ],
+          [
+            74.87900470507827,
+            32.70674454953301
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_3",
+        "to": "junction_4",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87900504323818,
+            32.706744462499344
+          ],
+          [
+            74.87928750720857,
+            32.70691370781749
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_4",
+        "to": "junction_5",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87928754888472,
+            32.70691372007464
+          ],
+          [
+            74.87949400137464,
+            32.70644623441778
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_8",
+        "to": "entrance_exit_reservation_counter",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88035454242961,
+            32.70483906526613
+          ],
+          [
+            74.88016487641852,
+            32.70477510695872
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_8",
+        "to": "entrance_exit_parcel_enquiry",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8803549614689,
+            32.70483904139016
+          ],
+          [
+            74.88034980574636,
+            32.704688060411826
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_8",
+        "to": "entrance_exit_booking_office",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88035534601931,
+            32.7048392513976
+          ],
+          [
+            74.88018573810177,
+            32.705023506716316
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_7",
+        "to": "entrance_exit_booking_office",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88015780303871,
+            32.7052038757905
+          ],
+          [
+            74.88018462369465,
+            32.705023187803604
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_7",
+        "to": "entrance_exit_general_waiting_hall_a",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8801581013866,
+            32.7052038230737
+          ],
+          [
+            74.87992008031765,
+            32.705263016906954
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_7",
+        "to": "entrance_exit_enquiry",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88015780837168,
+            32.70520377916685
+          ],
+          [
+            74.87997999526411,
+            32.704998961849626
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_9",
+        "to": "entrance_exit_enquiry",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8798082206001,
+            32.70508699604956
+          ],
+          [
+            74.87997969991409,
+            32.70499885499615
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_9",
+        "to": "entrance_exit_general_waiting_hall_a",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87980828340119,
+            32.70508718183281
+          ],
+          [
+            74.87991978181958,
+            32.70526334374796
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_1",
+        "to": "entrance_exit_general_waiting_hall_b",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87950373889853,
+            32.70570845849413
+          ],
+          [
+            74.87972346830608,
+            32.70561082115621
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_6",
+        "to": "entrance_exit_food_court",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87981702972328,
+            32.70586043150776
+          ],
+          [
+            74.87999209328262,
+            32.70577478327313
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_7",
+        "to": "entrance_exit_security_check_a",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88015857815984,
+            32.70520328630084
+          ],
+          [
+            74.88018850783325,
+            32.7053547370363
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_7",
+        "to": "entrance_exit_luggage_scanning",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88015783977215,
+            32.70520360004156
+          ],
+          [
+            74.88014554986415,
+            32.705449719816215
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_11",
+        "to": "entrance_exit_parcel_enquiry",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88056838258527,
+            32.70444273475084
+          ],
+          [
+            74.88034814988254,
+            32.70468751508204
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_8",
+        "to": "entrance_exit_toilet_gents",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88035489709901,
+            32.70483884810159
+          ],
+          [
+            74.88045062361147,
+            32.70482900924678
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_8",
+        "to": "entrance_exit_duty_office",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88035433022316,
+            32.70483900813406
+          ],
+          [
+            74.88039079021354,
+            32.70495670050728
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "entrance_exit_security_check_a",
+        "to": "entrance_exit_security_check_b",
+        "edgeType": "corridor",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88018888728223,
+            32.70535434564154
+          ],
+          [
+            74.88025583325293,
+            32.70539440812145
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_10",
+        "to": "entrance_exit_parcel_office",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8802299473422,
+            32.70437314797418
+          ],
+          [
+            74.8801907488934,
+            32.704524916185576
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_9",
+        "to": "entrance_exit_parcel_office",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8798081103183,
+            32.70508699218168
+          ],
+          [
+            74.88019061544313,
+            32.70452448401524
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_3",
+        "to": "entrance_exit_vip_lounge",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87900491806914,
+            32.706744289384474
+          ],
+          [
+            74.879135846711,
+            32.70668578841723
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_4",
+        "to": "entrance_exit_vip_lounge",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87928757848661,
+            32.70691354749168
+          ],
+          [
+            74.87913588854497,
+            32.70668583482542
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_5",
+        "to": "entrance_exit_retiring_room",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8794941457503,
+            32.70644586274945
+          ],
+          [
+            74.87936114878707,
+            32.70653691638192
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_4",
+        "to": "entrance_exit_retiring_room",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87928755677126,
+            32.70691368196108
+          ],
+          [
+            74.87936122906837,
+            32.70653699355556
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_5",
+        "to": "entrance_exit_ac_waiting_hall",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87949488541562,
+            32.7064448489066
+          ],
+          [
+            74.87952200536984,
+            32.7062378798271
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_5",
+        "to": "entrance_exit_inquiry_office",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87949428602826,
+            32.706445740516344
+          ],
+          [
+            74.8798247841622,
+            32.706143298003
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_5",
+        "to": "entrance_exit_ladies_toilet",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8794947977772,
+            32.7064465856396
+          ],
+          [
+            74.87972204121559,
+            32.70636288205765
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_5",
+        "to": "entrance_exit_divyang_toilet",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87949385589332,
+            32.70644601448261
+          ],
+          [
+            74.87965361492326,
+            32.706500302972614
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "entrance_exit_security_check_b",
+        "to": "platform_1",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88025705375506,
+            32.70539415328331
+          ],
+          [
+            74.880267188673,
+            32.70542604879793
+          ],
+          [
+            74.88012390501453,
+            32.70572928385097
+          ],
+          [
+            74.88021033838581,
+            32.70576708388836
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "platform_1",
+        "to": "stair_4",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88020911305892,
+            32.705766542295564
+          ],
+          [
+            74.88016283098747,
+            32.70584379719395
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_12"
+      },
+      "geometry": {
+        "coordinates": [
+          74.88025925032088,
+          32.70558536808221
+        ],
+        "type": "Point"
+      },
+      "id": 115
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "node",
+        "nodeType": "corridor",
+        "name": "junction_13"
+      },
+      "geometry": {
+        "coordinates": [
+          74.8798419386419,
+          32.7064487135395
+        ],
+        "type": "Point"
+      },
+      "id": 116
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_12",
+        "to": "platform_1",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88020931114201,
+            32.7057667402499
+          ],
+          [
+            74.88025990842641,
+            32.70558529808781
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": 117
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_12",
+        "to": "entrance_exit_drinking_water_a",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88025971667719,
+            32.705585500263155
+          ],
+          [
+            74.88028452288887,
+            32.70559408579702
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_12",
+        "to": "entrance_exit_waiting_area_a",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88025920134208,
+            32.70558543886942
+          ],
+          [
+            74.88041910279406,
+            32.7053145559951
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "stair_4",
+        "to": "stair_4_end",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88016319921724,
+            32.70584374000164
+          ],
+          [
+            74.88011535002383,
+            32.705942641198945
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "stair_1",
+        "to": "stair_1_end",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88011508979332,
+            32.70594309253268
+          ],
+          [
+            74.88006203961811,
+            32.70607278292282
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "platform_2",
+        "to": "stair_1",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88006216099865,
+            32.706072809066185
+          ],
+          [
+            74.8799947452155,
+            32.706198528234594
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_13",
+        "to": "platform_2",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87999508942417,
+            32.70619844313788
+          ],
+          [
+            74.87984218221254,
+            32.70644843717518
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_13",
+        "to": "entrance_exit_drinking_water_b",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87984196894212,
+            32.706448738613375
+          ],
+          [
+            74.87986291920464,
+            32.706456317439816
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "junction_13",
+        "to": "entrance_exit_waiting_area_b",
+        "edgeType": "corridor_to_room",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.87984234882859,
+            32.706449125899795
+          ],
+          [
+            74.87969005781147,
+            32.706836636598766
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "stair_4_end",
+        "to": "stair_2_end",
+        "edgeType": "stairToStair",
+        "accessible": true
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88011510793748,
+            32.70594284845663
+          ],
+          [
+            74.8803576810538,
+            32.70602794023699
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": 126
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "stair_3",
+        "to": "stair_2_end",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88035830712803,
+            32.70602836854384
+          ],
+          [
+            74.88041195297856,
+            32.7059430006143
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "stair_2",
+        "to": "stair_2_end",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.8803582554869,
+            32.706028453299695
+          ],
+          [
+            74.88032070856565,
+            32.70612020711141
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "platform_3",
+        "to": "stair_3",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88041192980558,
+            32.70594304000679
+          ],
+          [
+            74.88056491060016,
+            32.70558911306607
+          ]
+        ],
+        "type": "LineString"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "edge",
+        "from": "platform_4",
+        "to": "stair_2",
+        "edgeType": "stair",
+        "accessible": false
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            74.88032079273728,
+            32.70611996608372
+          ],
+          [
+            74.87994033277954,
+            32.70687170467423
+          ]
+        ],
+        "type": "LineString"
+      }
+    }
+  ]
+}
