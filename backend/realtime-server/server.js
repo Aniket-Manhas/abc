@@ -129,7 +129,7 @@ connectDB()
       console.warn(`⚠️  Could not create default admin: ${err.message}`);
     }
 
-    server.listen(PORT, () => {
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`\n🚂 Sahyatri Realtime Server running on port ${PORT}`);
       console.log(`📡 WebSocket: ws://localhost:${PORT}`);
       console.log(`🌐 API: http://localhost:${PORT}/api`);

@@ -68,7 +68,7 @@ async function bootstrap() {
     console.warn('⚠️ Could not connect to MongoDB:', err.message);
   }
   loadGeoJsonOnStartup();
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`Indoor navigation backend running on port ${PORT}`);
     console.log(`  GET /api/geojson  GET /api/map-status  GET /api/route?from=lat,lng&to=roomId`);
     console.log(`  Frontend dev: Vite proxies http://localhost:5173/api/* → http://localhost:${PORT}/api/*`);
