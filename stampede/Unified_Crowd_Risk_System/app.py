@@ -667,6 +667,19 @@ def video_feed():
         },
     )
 
+@app.route('/latest_frame')
+def latest_frame():
+    """Return a single latest frame as a JPEG image for HTTP polling (HF Spaces workaround)."""
+    global camera_instance
+    if camera_instance is None:
+        return jsonify({"error": "No camera running"}), 404
+    
+    frame = camera_instance.get_frame()
+    if frame is None:
+        return jsonify({"error": "No frame available yet"}), 503
+        
+    return Response(frame, mimetype='image/jpeg')
+
 
 @app.route('/metrics')
 def metrics():
@@ -1155,6 +1168,21 @@ def file_feed():
         return jsonify({'error': 'No video loaded'}), 404
     return Response(gen_file(fc),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/file_latest_frame')
+def file_latest_frame():
+    """Return a single latest frame for the loaded video file (HF Spaces workaround)."""
+    global file_camera_instance
+    with file_camera_lock:
+        fc = file_camera_instance
+    if fc is None:
+        return jsonify({'error': 'No video loaded'}), 404
+        
+    frame = fc.get_frame()
+    if frame is None:
+        return jsonify({'error': 'No frame available yet'}), 503
+        
+    return Response(frame, mimetype='image/jpeg')
 
 
 @app.route('/file_metrics')

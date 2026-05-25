@@ -310,7 +310,7 @@ function UploadTab({ soundEnabled, setUploadAlarmActive }) {
           <div style={{ borderRadius:14, overflow:'hidden', border:`2px solid ${rc ? rc.border : 'var(--border)'}`, background:'var(--bg-secondary)', position:'relative', transition:'border-color 0.4s' }}>
             <img
               key={streamKey}
-              src={`${STAMPEDE_URL}/file_feed?t=${streamKey}`}
+              src={analysing ? `${STAMPEDE_URL}/file_latest_frame?t=${streamKey}` : ''}
               alt="Video analysis feed"
               style={{ width:'100%', display:'block' }}
             />
@@ -412,18 +412,19 @@ export default function StampedeMonitor() {
   const [online, setOnline]       = useState(null);
   const [cameras, setCameras]     = useState([]);
   const [camIdx, setCamIdx]       = useState(0);
-  const [streamKey, setStreamKey] = useState(0);
+  const [streamKey, setStreamKey] = useState(Date.now());
   const [feedError, setFeedError] = useState(false);
   const esRef = useRef(null);
   const sseRetryRef = useRef(null);
   const camIdxRef = useRef(camIdx);
+  const pollIntervalRef = useRef(null);
   const { reportCameraData } = useSocket();
 
   camIdxRef.current = camIdx;
 
   const refreshStream = () => {
     setFeedError(false);
-    setStreamKey(k => k + 1);
+    setStreamKey(Date.now());
   };
 
   // Load camera list + periodic health check
@@ -525,7 +526,21 @@ export default function StampedeMonitor() {
     };
   }, [tab, reportCameraData]);
 
-  // Restart MJPEG when camera changes (server runs one camera at a time)
+  // Polling for images (HF Spaces workaround)
+  useEffect(() => {
+    if (online !== true) return undefined;
+    
+    // For live tab, we poll /latest_frame. For upload tab, we poll /file_latest_frame when analysing.
+    // The image src already has streamKey, so we just update streamKey rapidly.
+    const id = setInterval(() => {
+      setStreamKey(Date.now());
+    }, 200); // 5 FPS polling
+    pollIntervalRef.current = id;
+    
+    return () => clearInterval(id);
+  }, [online, tab]);
+
+  // Restart MJPEG / camera when camera changes
   useEffect(() => {
     if (tab !== 'live' || online !== true) return undefined;
     refreshStream();
@@ -672,8 +687,8 @@ export default function StampedeMonitor() {
                 </div>
               ) : (
                 <img
-                  key={`${camIdx}-${streamKey}`}
-                  src={`${STAMPEDE_URL}/video_feed?camera=${camIdx}&t=${streamKey}`}
+                  key={`${camIdx}`}
+                  src={`${STAMPEDE_URL}/latest_frame?camera=${camIdx}&t=${streamKey}`}
                   alt="Live crowd density feed"
                   style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
                   onLoad={() => setFeedError(false)}
