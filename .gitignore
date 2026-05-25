@@ -49,7 +49,7 @@ data/
 *.njsproj
 *.sln
 *.sw?
-
+stampede/Unified_Crowd_Risk_System/CrowdCounting-P2PNet/checkpoints/
 # =========================
 # OS files
 # =========================
