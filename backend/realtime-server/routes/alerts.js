@@ -6,13 +6,41 @@ const { protect, adminOnly } = require('../middleware/auth');
 // POST /api/alerts/panic — Passenger triggers panic
 router.post('/panic', protect, async (req, res) => {
   try {
-    const { nodeId, nodeName, lat, lng, floor, message, type } = req.body;
+    const {
+      nodeId,
+      nodeName,
+      lat,
+      lng,
+      floor,
+      accuracy,
+      locationSource,
+      message,
+      type,
+    } = req.body;
+
+    const location = {
+      nodeId: nodeId || 'unknown',
+      nodeName: nodeName || 'Unknown location',
+      locationSource: locationSource || (lat != null && lng != null ? 'gps' : 'landmark'),
+    };
+
+    if (lat != null && lng != null) {
+      location.lat = Number(lat);
+      location.lng = Number(lng);
+    }
+    if (floor != null && floor !== undefined && floor !== '') {
+      location.floor = Number(floor);
+    }
+    if (accuracy != null && accuracy !== undefined) {
+      location.accuracy = Number(accuracy);
+    }
+
     const alert = await Alert.create({
       type: type || 'panic',
       userId: req.user._id,
       userName: req.user.name,
       userPhone: req.user.phone || '',
-      location: { nodeId, nodeName, lat, lng, floor: floor || 0 },
+      location,
       message: message || 'Emergency! Need help immediately.'
     });
 

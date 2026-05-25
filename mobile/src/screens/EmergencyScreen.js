@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, Linking,
@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker';
 import { geoAPI, alertsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import PanicButton from '../components/PanicButton';
+import { PLACEHOLDER_VALUE } from '../utils/emergencyLocation';
 import { colors, spacing, radius } from '../theme';
 import useTheme from '../useTheme';
 
@@ -27,11 +28,24 @@ const SAFETY_TIPS = [
 
 const STATUS_ICON = { active: '🔴', acknowledged: '🟡', resolved: '✅' };
 
+function formatAlertLocation(alert) {
+  const loc = alert?.location;
+  if (!loc) return 'Unknown';
+  const parts = [loc.nodeName];
+  if (loc.floor != null && loc.floor !== undefined) {
+    parts.push(`Floor ${loc.floor}`);
+  }
+  if (loc.lat != null && loc.lng != null) {
+    parts.push(`${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`);
+  }
+  return parts.filter(Boolean).join(' · ');
+}
+
 export default function EmergencyScreen() {
   const { user } = useAuth();
   const { colors, fs } = useTheme();
   const [graphData, setGraphData] = useState(null);
-  const [currentNode, setCurrentNode] = useState('');
+  const [currentNode, setCurrentNode] = useState(PLACEHOLDER_VALUE);
   const [myAlerts, setMyAlerts]   = useState([]);
   const [loading, setLoading]     = useState(true);
 
@@ -42,16 +56,17 @@ export default function EmergencyScreen() {
       .then(([graph, alerts]) => {
         setGraphData(graph.data);
         setMyAlerts(alerts.data || []);
-        const firstNode = Object.keys(graph.data?.nodes || {})[0];
-        if (firstNode) setCurrentNode(firstNode);
       })
       .catch(_ => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const nodes = graphData
-    ? Object.values(graphData.nodes || {}).filter(n => n.type !== 'boundary')
-    : [];
+  const nodes = useMemo(() => {
+    if (!graphData?.nodes) return [];
+    return Object.values(graphData.nodes)
+      .filter(n => n.type !== 'boundary')
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
+  }, [graphData]);
 
   if (loading) {
     return (
@@ -63,14 +78,22 @@ export default function EmergencyScreen() {
   }
 
   return (
-    <ScrollView style={[styles.screen, { backgroundColor: colors.bgPrimary }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.screen, { backgroundColor: colors.bgPrimary }]}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.header}>
         <Text style={{ fontSize: fs(22), fontWeight: '800', color: colors.crowdHigh }}>🚨 Emergency & Safety</Text>
-        <Text style={{ fontSize: fs(14), color: colors.textSecondary, marginTop: 4 }}>Tap the emergency button to immediately alert station staff.</Text>
+        <Text style={{ fontSize: fs(14), color: colors.textSecondary, marginTop: 4 }}>
+          Tap the emergency button to alert station staff. Your GPS is always included when available.
+        </Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
-        <Text style={{ fontSize: fs(15), fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm }}>📍 Your Current Location</Text>
+        <Text style={{ fontSize: fs(15), fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm }}>
+          📍 Where are you? (optional)
+        </Text>
         <View style={[styles.pickerBox, { backgroundColor: colors.bgElevated, borderColor: colors.border }]} collapsable={false}>
           <Picker
             selectedValue={currentNode}
@@ -79,15 +102,25 @@ export default function EmergencyScreen() {
             mode="dropdown"
             dropdownIconColor={colors.textMuted}
           >
+            <Picker.Item
+              label="— Select nearest landmark (optional) —"
+              value={PLACEHOLDER_VALUE}
+            />
             {nodes.map(n => (
               <Picker.Item key={n.id} label={n.name} value={n.id} />
             ))}
           </Picker>
         </View>
-        <Text style={{ fontSize: fs(11), color: colors.textMuted }}>Select your nearest landmark</Text>
+        <Text style={{ fontSize: fs(11), color: colors.textMuted, marginTop: 4 }}>
+          Leave unselected to send only your live GPS to admins. Select a landmark if you know your area.
+        </Text>
       </View>
 
-      <PanicButton currentNodeId={currentNode} graphData={graphData} userId={user?._id} />
+      <PanicButton
+        selectedNodeId={currentNode}
+        graphData={graphData}
+        userId={user?._id}
+      />
 
       <View style={[styles.card, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
         <Text style={{ fontSize: fs(15), fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.sm }}>📞 Station Helpline</Text>
@@ -122,7 +155,9 @@ export default function EmergencyScreen() {
             <View key={alert._id} style={[styles.alertRow, { borderLeftColor: STATUS_COLOR[alert.status] }]}>
               <Text style={{ fontSize: fs(20) }}>{STATUS_ICON[alert.status]}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: fs(13), fontWeight: '600', color: colors.textPrimary }}>{alert.type?.toUpperCase()} — {alert.location?.nodeName}</Text>
+                <Text style={{ fontSize: fs(13), fontWeight: '600', color: colors.textPrimary }}>
+                  {alert.type?.toUpperCase()} — {formatAlertLocation(alert)}
+                </Text>
                 <Text style={{ fontSize: fs(11), color: colors.textMuted }}>{new Date(alert.createdAt).toLocaleString()}</Text>
               </View>
               <Text style={{ fontSize: fs(12), fontWeight: '700', color: STATUS_COLOR[alert.status], textTransform: 'capitalize' }}>{alert.status}</Text>

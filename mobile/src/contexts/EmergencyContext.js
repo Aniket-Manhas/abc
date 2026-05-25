@@ -1,77 +1,99 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState, useRef } from 'react';
 import { Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import { Alert } from 'react-native';
 import { alertsAPI } from '../services/api';
 import { useAuth } from './AuthContext';
+import {
+  resolveEmergencyLocation,
+  canSendEmergency,
+} from '../utils/emergencyLocation';
 
 const EmergencyContext = createContext(null);
 
-const SHAKE_THRESHOLD = 3.5; // g-force threshold for a violent shake
-const MIN_TIME_BETWEEN_SHAKES = 2000; // ms
+const SHAKE_THRESHOLD = 3.5;
+const MIN_TIME_BETWEEN_SHAKES = 2000;
 
 export const EmergencyProvider = ({ children }) => {
   const { user } = useAuth();
-  const [lastShakeTime, setLastShakeTime] = useState(0);
+  const lastShakeTimeRef = useRef(0);
+  const [shakeEnabled] = useState(true);
 
   useEffect(() => {
+    if (!shakeEnabled || !user) return undefined;
+
     let subscription;
+    Accelerometer.setUpdateInterval(200);
 
-    const subscribe = async () => {
-      // Set update interval
-      Accelerometer.setUpdateInterval(200);
+    subscription = Accelerometer.addListener(({ x, y, z }) => {
+      const gForce = Math.sqrt(x * x + y * y + z * z);
+      if (gForce <= SHAKE_THRESHOLD) return;
 
-      subscription = Accelerometer.addListener(({ x, y, z }) => {
-        const gForce = Math.sqrt(x * x + y * y + z * z);
-        
-        if (gForce > SHAKE_THRESHOLD) {
-          const now = Date.now();
-          if (now - lastShakeTime > MIN_TIME_BETWEEN_SHAKES) {
-            setLastShakeTime(now);
-            triggerShakeSos();
-          }
-        }
-      });
-    };
+      const now = Date.now();
+      if (now - lastShakeTimeRef.current <= MIN_TIME_BETWEEN_SHAKES) return;
+      lastShakeTimeRef.current = now;
+      triggerShakeSos();
+    });
 
-    subscribe();
-    return () => subscription && subscription.remove();
-  }, [lastShakeTime, user]);
+    return () => subscription?.remove();
+  }, [shakeEnabled, user]);
 
   const triggerShakeSos = async () => {
-    // Only logged in passengers should trigger real alerts
     if (!user) return;
-    
+
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    
-    // We confirm with the user heavily before actually firing the API, 
-    // to prevent accidental shakes in the pocket.
+
     Alert.alert(
-      "🚨 EMERGENCY SHAKE DETECTED",
-      "Do you want to send an SOS to station staff?",
+      '🚨 Emergency shake detected',
+      'Send an SOS to station staff with your current GPS location?',
       [
-        { text: "Cancel", style: "cancel", onPress: () => {} },
-        { 
-          text: "SEND SOS", 
-          style: "destructive",
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send SOS',
+          style: 'destructive',
           onPress: async () => {
             try {
+              const location = await resolveEmergencyLocation({
+                selectedNodeId: '',
+                graphData: null,
+              });
+
+              if (!canSendEmergency(location)) {
+                Alert.alert(
+                  'Location required',
+                  'Enable location services so staff can find you, then try again.',
+                );
+                return;
+              }
+
               await alertsAPI.triggerPanic({
                 userId: user._id,
                 type: 'panic',
-                nodeId: 'unknown',
-                nodeName: 'Triggered via Shake',
-                floor: 0,
+                nodeId: location.nodeId,
+                nodeName: location.nodeName,
+                floor: location.floor,
+                lat: location.lat,
+                lng: location.lng,
+                accuracy: location.accuracy,
+                locationSource: 'shake_gps',
+                message: 'Emergency alert triggered by device shake',
               });
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert("SOS Sent", "Station staff have been notified.");
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
+              Alert.alert('SOS sent', 'Station staff have been notified.');
             } catch (e) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert("Error", "Could not send SOS. Please check connection.");
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Error,
+              );
+              Alert.alert(
+                'Error',
+                'Could not send SOS. Please check your connection.',
+              );
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
@@ -80,4 +102,9 @@ export const EmergencyProvider = ({ children }) => {
       {children}
     </EmergencyContext.Provider>
   );
+};
+
+export const useEmergency = () => {
+  const ctx = React.useContext(EmergencyContext);
+  return ctx;
 };

@@ -18,7 +18,7 @@ import StampedeMonitor    from './pages/admin/StampedeMonitor';
 // Page title map
 const PAGE_TITLES = {
   '/admin/dashboard':       '📊 Overview',
-  '/admin/crowd':           '🔴 Crowd Monitor',
+  // '/admin/crowd':           '🔴 Crowd Monitor',
   '/admin/alerts':          '🚨 Alert Manager',
   '/admin/editor':          '🗺️ Station Editor',
   '/admin/analytics':       '📈 Analytics',
@@ -71,7 +71,7 @@ export default function App() {
       {/* Protected admin routes */}
       <Route element={<RequireAdmin><AppLayout /></RequireAdmin>}>
         <Route path="/admin/dashboard"     element={<AdminDashboard />} />
-        <Route path="/admin/crowd"         element={<CrowdMonitor />} />
+        {/* <Route path="/admin/crowd"         element={<CrowdMonitor />} /> */}
         <Route path="/admin/alerts"        element={<AlertManager />} />
         <Route path="/admin/editor"        element={<StationEditor />} />
         <Route path="/admin/analytics"     element={<Analytics />} />

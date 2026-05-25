@@ -10,7 +10,9 @@ const alertSchema = new mongoose.Schema({
     nodeName: { type: String, default: 'Unknown Location' },
     lat:   { type: Number },
     lng:   { type: Number },
-    floor: { type: Number, default: 0 }
+    floor: { type: Number },
+    accuracy: { type: Number },
+    locationSource: { type: String },
   },
   message: { type: String, default: '' },
   status: { type: String, enum: ['active', 'acknowledged', 'resolved'], default: 'active' },

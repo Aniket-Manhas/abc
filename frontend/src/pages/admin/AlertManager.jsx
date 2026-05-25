@@ -102,12 +102,20 @@ export default function AlertManager() {
                 <span className={`badge`} style={{ background: `${STATUS_COLORS[alert.status]}22`, color: STATUS_COLORS[alert.status] }}>{alert.status}</span>
               </div>
               <div style={{ fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--text-secondary)' }}>
-                📍 {alert.location?.nodeName} · Floor {alert.location?.floor || 0}
-                {alert.location?.lat && alert.location?.lng && (
+                📍 {alert.location?.nodeName}
+                {alert.location?.floor != null && alert.location?.floor !== undefined && (
+                  <span> · Floor {alert.location.floor}</span>
+                )}
+                {alert.location?.lat != null && alert.location?.lng != null && (
                   <span style={{ marginLeft: '0.5rem', color: 'var(--accent-blue)' }}>
                     <a href={`https://maps.google.com/?q=${alert.location.lat},${alert.location.lng}`} target="_blank" rel="noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>
-                      ({alert.location.lat.toFixed(5)}, {alert.location.lng.toFixed(5)})
+                      ({Number(alert.location.lat).toFixed(5)}, {Number(alert.location.lng).toFixed(5)})
                     </a>
+                  </span>
+                )}
+                {alert.location?.accuracy != null && (
+                  <span style={{ marginLeft: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    ±{Math.round(alert.location.accuracy)}m
                   </span>
                 )}
               </div>
