@@ -1,14 +1,10 @@
 import axios from 'axios';
 
-const browserHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const defaultRealtimeUrl = `http://${browserHost}:5000`;
-const defaultAnalyticsUrl = `http://${browserHost}:5001`;
+const REALTIME_URL = import.meta.env.VITE_REALTIME_API_URL || 'http://localhost:5000';
+const ANALYTICS_URL = import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:5001';
 
-const REALTIME_URL = import.meta.env.VITE_REALTIME_API_URL || defaultRealtimeUrl;
-const ANALYTICS_URL = import.meta.env.VITE_ANALYTICS_API_URL || defaultAnalyticsUrl;
-
-const realtimeAPI = axios.create({ baseURL: `${REALTIME_URL}/api` });
-const analyticsAPI = axios.create({ baseURL: `${ANALYTICS_URL}/api` });
+const realtimeAPI = axios.create({ baseURL: `${REALTIME_URL}/api`, timeout: 15000 });
+const analyticsAPI = axios.create({ baseURL: `${ANALYTICS_URL}/api`, timeout: 15000 });
 
 // Attach JWT token to every request
 const authInterceptor = (config) => {

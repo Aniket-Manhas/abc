@@ -15,6 +15,9 @@ MAIL_USERNAME       = os.environ.get("MAIL_USERNAME", "")
 MAIL_PASSWORD       = os.environ.get("MAIL_PASSWORD", "")
 ADMIN_ALERT_EMAIL   = os.environ.get("ADMIN_ALERT_EMAIL", "")
 
+ANALYTICS_API_URL   = os.environ.get("ANALYTICS_API_URL", "http://127.0.0.1:5001").rstrip('/')
+PORT                = int(os.environ.get("PORT", os.environ.get("FLASK_PORT", 7860)))
+
 # ── Grid Settings ─────────────────────────────────────────────────────────────
 GRID_ROWS = 6
 GRID_COLS = 6

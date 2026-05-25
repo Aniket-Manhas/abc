@@ -100,6 +100,24 @@ def _ensure_vgg_backbone_weights() -> None:
         except Exception as exc:
             _log(f"[P2PNet] Failed to download {name}: {exc}")
 
+def _ensure_p2pnet_weights() -> None:
+    """Download P2PNet SHTechA.pth weights if P2PNET_WEIGHTS_URL is provided."""
+    import urllib.request
+
+    if os.path.isfile(config.P2PNET_WEIGHTS) and os.path.getsize(config.P2PNET_WEIGHTS) > 1_000_000:
+        return
+        
+    url = os.environ.get("P2PNET_WEIGHTS_URL")
+    if not url:
+        return
+        
+    os.makedirs(os.path.dirname(config.P2PNET_WEIGHTS), exist_ok=True)
+    _log(f"[P2PNet] Downloading P2PNet weights from {url}")
+    try:
+        urllib.request.urlretrieve(url, config.P2PNET_WEIGHTS)
+    except Exception as exc:
+        _log(f"[P2PNet] Failed to download weights: {exc}")
+
 
 def _patch_torchvision_compat() -> None:
     """P2PNet repo uses torchvision.ops._new_empty_tensor removed in newer torchvision."""
@@ -137,6 +155,7 @@ def _load_p2pnet() -> None:
 
         _patch_torchvision_compat()
         _ensure_vgg_backbone_weights()
+        _ensure_p2pnet_weights()
 
         import torch
         import torchvision.transforms as T

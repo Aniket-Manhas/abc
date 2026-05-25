@@ -336,7 +336,7 @@ class VideoCamera:
                         "source": "camera",
                         "floor": 0
                     }
-                    requests.post("http://127.0.0.1:5001/api/analytics/crowd", json=payload, timeout=2)
+                    requests.post(f"{config.ANALYTICS_API_URL}/api/analytics/crowd", json=payload, timeout=2)
                 except Exception as e:
                     pass
 
@@ -724,6 +724,13 @@ def api_status():
         "cameras_configured": len(load_cameras()),
         "current_camera_index": current_camera_index,
         "dense_threshold": config.DENSE_THRESHOLD,
+    })
+
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "ok",
+        "service": "ml-crowd-server"
     })
 
 
@@ -1168,5 +1175,6 @@ if __name__ == '__main__':
     # debug/reloader off — avoids duplicate threads that break MJPEG + SSE clients
     debug = os.environ.get('STAMPEDE_DEBUG', '').lower() in ('1', 'true', 'yes')
     print('Sahyatri Crowd Monitor → http://127.0.0.1:5002  (admin UI uses this API)')
-    app.run(host='0.0.0.0', port=5002, debug=debug, threaded=True, use_reloader=False)
+    port = getattr(config, 'PORT', int(os.environ.get('FLASK_PORT', 7860)))
+    app.run(host='0.0.0.0', port=port, debug=debug, threaded=True, use_reloader=False)
 

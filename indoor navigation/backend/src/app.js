@@ -9,9 +9,24 @@ const routeRoutes = require("./routes/routeRoutes");
 
 const app = express();
 
-app.use(cors());
-app.use(morgan("dev"));
-app.use(express.json({ limit: "20mb" }));
+const allowedOriginsStr = process.env.CORS_ORIGIN || '';
+const configuredOrigins = allowedOriginsStr.split(',').map(s => s.trim()).filter(Boolean);
+const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://127.0.0.1:5173'];
+const allowedOrigins = new Set([...defaultOrigins, ...configuredOrigins]);
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+  if (origin.startsWith('exp://')) return true; // allow expo
+  return /^https?:\/\/(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[0-1])\.\d+\.\d+)(?::\d+)?$/.test(origin);
+};
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) return callback(null, true);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  }
+}));
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "indoor-navigation-backend" });

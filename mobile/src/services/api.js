@@ -2,9 +2,9 @@ import axios from 'axios';
 import storage from './storage';
 
 // ── Backend URLs ─────────────────────────────────────────────
-const REALTIME_URL  = 'http://192.168.29.37:5000';
-const ANALYTICS_URL = 'http://192.168.29.37:5001';
-const INDOOR_NAV_URL = 'http://192.168.29.37:4000';
+const REALTIME_URL  = process.env.EXPO_PUBLIC_REALTIME_URL || 'http://localhost:5000';
+const ANALYTICS_URL = process.env.EXPO_PUBLIC_ANALYTICS_URL || 'http://localhost:5001';
+const INDOOR_NAV_URL = process.env.EXPO_PUBLIC_INDOOR_NAV_URL || 'http://localhost:4000';
 
 const realtimeAPI  = axios.create({ baseURL: `${REALTIME_URL}/api` });
 const analyticsAPI = axios.create({ baseURL: `${ANALYTICS_URL}/api` });

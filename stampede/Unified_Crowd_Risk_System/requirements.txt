@@ -1,6 +1,6 @@
 flask
 flask-cors
-opencv-python
+opencv-python-headless
 ultralytics
 scipy
 numpy
@@ -8,3 +8,4 @@ torch
 torchvision
 Pillow
 python-dotenv
+requests

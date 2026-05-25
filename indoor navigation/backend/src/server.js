@@ -57,7 +57,16 @@ function loadGeoJsonOnStartup() {
 }
 
 async function bootstrap() {
-  await connectDatabase();
+  try {
+    if (process.env.MONGO_URI) {
+      await connectDatabase();
+      console.log('✅ MongoDB connected');
+    } else {
+      console.log('ℹ️ No MONGO_URI provided — running in standalone mode (no DB)');
+    }
+  } catch (err) {
+    console.warn('⚠️ Could not connect to MongoDB:', err.message);
+  }
   loadGeoJsonOnStartup();
   app.listen(PORT, () => {
     console.log(`Indoor navigation backend running on port ${PORT}`);

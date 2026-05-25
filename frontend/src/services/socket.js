@@ -1,8 +1,6 @@
 import { io } from 'socket.io-client';
 
-const browserHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const defaultSocketUrl = `http://${browserHost}:5000`;
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || defaultSocketUrl;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 let socket = null;
 

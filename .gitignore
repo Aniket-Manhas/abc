@@ -66,3 +66,8 @@ REPORT_FIND_REPLACE_finally.docx.md
 _report_extracted.txt
 _finally_extracted.txt
 presentation
+
+# ML Checkpoints & Models
+*.pth
+*.pt
+checkpoints/
