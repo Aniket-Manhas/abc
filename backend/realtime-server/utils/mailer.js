@@ -6,18 +6,23 @@ const sendEmail = async (options) => {
     return;
   }
 
+  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: process.env.SMTP_PORT == 465, 
+    port: port,
+    secure: port === 465, 
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     }
   });
 
+  const fromName = process.env.FROM_NAME || 'Sahyatri Alerts';
+  const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+
   const mailOptions = {
-    from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+    from: `"${fromName}" <${fromEmail}>`,
     to: options.email,
     subject: options.subject,
     text: options.message
