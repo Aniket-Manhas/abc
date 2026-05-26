@@ -86,6 +86,20 @@ app.use(
   express.static(path.join(__dirname, "../../GeoResources/station")),
 );
 
+// ── Email test endpoint (admin only, used to debug SMTP config) ──
+app.get("/api/test-email", async (req, res) => {
+  const sendEmail = require("./utils/mailer");
+  const to = req.query.to || process.env.SMTP_USER;
+  if (!to) return res.status(400).json({ message: "Provide ?to=email@example.com" });
+  const result = await sendEmail({
+    email: to,
+    subject: "✅ Sahyatri Email Test",
+    message: `This is a test email from Sahyatri server.\nSMTP Host: ${process.env.SMTP_HOST}\nSMTP Port: ${process.env.SMTP_PORT}\nSMTP User: ${process.env.SMTP_USER}\nTimestamp: ${new Date().toISOString()}`
+  });
+  res.json(result);
+});
+
+
 // 404 handler
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 

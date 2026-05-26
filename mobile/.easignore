@@ -1,0 +1,18 @@
+# Exclude large ML model folder (not needed for build)
+CrowdCounting-P2PNet/
+
+# Exclude local env files
+.env
+.env.local
+.env.*.local
+
+# Exclude local expo cache
+.expo/
+
+# Exclude IDE files
+.vscode/
+.idea/
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
