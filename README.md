@@ -6,13 +6,22 @@ Sahyatri ("co-traveler") helps manage large crowds at pilgrimages, railway stati
 
 ---
 
+## 🔗 Live Links
+
+| | Link |
+|--|------|
+| 📱 **Download Mobile App (APK)** | [Download for Android](https://expo.dev/artifacts/eas/4x6Rq4pasPeoKjcNpVXTYH.apk) |
+| 🖥️ **Admin Dashboard (Web)** | [Open Dashboard](https://abc-three-phi.vercel.app/admin/notifications) |
+
+---
+
 ## What It Does
 
 - 📷 **Watches crowds** using AI (YOLOv8) to detect stampede risk
-- 🚨 **Alerts security** instantly via email and mobile notifications
+- 🚨 **Alerts security** instantly via email and the [admin dashboard](https://abc-three-phi.vercel.app/admin/notifications)
 - 🗺️ **Navigates indoors** with accessible routes (ramps, elevators)
-- 📊 **Shows live data** on an admin dashboard with maps and charts
-- 📱 **Guides pilgrims** via a mobile app with SOS button
+- 📊 **Shows live data** on the [admin dashboard](https://abc-three-phi.vercel.app/admin/notifications) with maps and charts
+- 📱 **Guides pilgrims** via the [mobile app](https://expo.dev/artifacts/eas/4x6Rq4pasPeoKjcNpVXTYH.apk) with SOS button
 
 ---
 
@@ -23,8 +32,8 @@ Sahyatri ("co-traveler") helps manage large crowds at pilgrimages, railway stati
 | **ML Server** | Detects crowd density & risk | Python, Flask, YOLOv8 |
 | **Realtime Server** | Sends alerts, tracks locations | Node.js, Socket.io, MongoDB |
 | **Navigation Server** | Finds best indoor path | Node.js, A* algorithm |
-| **Admin Dashboard** | Live map, charts, camera feed | React 19, Mapbox |
-| **Mobile App** | Pilgrim navigation + SOS | React Native, Expo |
+| **Admin Dashboard** | Live map, charts, camera feed → [Open](https://abc-three-phi.vercel.app/admin/notifications) | React 19, Mapbox |
+| **Mobile App** | Pilgrim navigation + SOS → [Download APK](https://expo.dev/artifacts/eas/4x6Rq4pasPeoKjcNpVXTYH.apk) | React Native, Expo |
 
 ---
 
@@ -107,6 +116,8 @@ VITE_MAPBOX_ACCESS_TOKEN=your_token
 VITE_API_URL=http://localhost:5000
 ```
 
+> 🌐 Hosted version: [https://abc-three-phi.vercel.app/admin/notifications](https://abc-three-phi.vercel.app/admin/notifications)
+
 ---
 
 ### 4. Start Mobile App
@@ -122,6 +133,8 @@ npx expo start
 EXPO_PUBLIC_API_URL=http://your-ip:5000
 EXPO_PUBLIC_NAV_URL=http://your-ip:3000
 ```
+
+> 📱 Pre-built APK: [Download here](https://expo.dev/artifacts/eas/4x6Rq4pasPeoKjcNpVXTYH.apk) — install directly on any Android device, no Play Store needed.
 
 ---
 
